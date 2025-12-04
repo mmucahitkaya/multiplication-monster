@@ -60,6 +60,7 @@
             transform: scale(1.1);
         }
 
+        /* Animations */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
@@ -71,6 +72,29 @@
             border-color: #ef4444 !important;
             background-color: #fee2e2 !important;
         }
+
+        /* --- NEW EMOJI ANIMATIONS --- */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-200px) scale(1.5) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes floatDown {
+            0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 1; }
+            25% { transform: translateX(-20px) translateY(30px) rotate(-20deg); }
+            50% { transform: translateX(20px) translateY(60px) rotate(20deg); }
+            100% { transform: translateY(150px) scale(0.5) rotate(0deg); opacity: 0; }
+        }
+
+        .emoji-animated {
+            position: fixed;
+            pointer-events: none;
+            z-index: 60;
+            font-size: 3rem;
+        }
+
+        .emoji-happy { animation: floatUp 1s ease-out forwards; }
+        .emoji-sad { animation: floatDown 1.5s ease-in forwards; }
 
         #confetti {
             position: fixed;
@@ -93,7 +117,7 @@
 
     <canvas id="confetti"></canvas>
 
-    <!-- Language Selector (Fixed Top Right) -->
+    <!-- Language Selector -->
     <div class="absolute top-4 right-4 z-50 flex gap-2">
         <button onclick="setLanguage('tr')" id="btn-tr" class="lang-btn active">🇹🇷</button>
         <button onclick="setLanguage('en')" id="btn-en" class="lang-btn">🇬🇧</button>
@@ -102,11 +126,15 @@
     <!-- START SCREEN -->
     <div id="start-screen" class="game-container justify-center items-center text-center">
         <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-2">Çarpım<br>Canavarı</h1>
-        <div class="text-center mb-6">
-            <span id="title-sub" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold">Zor Sayılar Modu</span>
+        
+        <div class="text-8xl mb-6 mt-4">🦁</div>
+        
+        <!-- Name Input Section -->
+        <div class="w-full mb-6">
+            <input type="text" id="player-name-input" placeholder="Adın ne?" class="w-full text-center text-2xl p-4 rounded-xl border-4 border-blue-200 focus:border-blue-500 outline-none text-gray-700 placeholder-gray-300 transition-colors" autocomplete="off">
+            <p id="name-warning" class="text-red-500 text-sm mt-2 opacity-0 transition-opacity">Lütfen bir isim yaz!</p>
         </div>
-        <div class="text-8xl mb-6">🦁</div>
-        <p id="desc-text" class="text-gray-600 text-lg mb-8">5, 6, 7, 8 ve 9 sayılarına daha çok çalışacağız!</p>
+
         <button id="btn-start" onclick="startGame()" class="w-full py-5 text-2xl font-bold rounded-2xl btn-green shadow-lg active:scale-95 transition-transform">
             BAŞLA!
         </button>
@@ -115,7 +143,7 @@
     <!-- GAME SCREEN -->
     <div id="game-screen" class="game-container hidden">
         <!-- Top Bar: Score & Streak -->
-        <div class="flex justify-between items-center mb-4 mt-8"> <!-- mt-8 added for flag space -->
+        <div class="flex justify-between items-center mb-4 mt-8"> 
             <div class="bg-yellow-100 px-4 py-2 rounded-xl border-b-4 border-yellow-300">
                 <span id="label-score" class="text-yellow-700 font-bold">Yıldız:</span>
                 <span id="score" class="text-2xl font-bold text-yellow-600">0</span>
@@ -128,7 +156,7 @@
 
         <!-- Question Area -->
         <div id="question-box" class="screen-area flex flex-col items-center justify-center flex-grow mb-4 relative overflow-hidden p-4">
-            <div id="feedback-message" class="absolute top-4 font-bold text-xl text-gray-400 opacity-0 transition-opacity">Harika!</div>
+            <div id="feedback-message" class="absolute top-4 font-bold text-xl text-gray-400 opacity-0 transition-opacity text-center w-full px-2">Harika!</div>
             
             <div class="flex items-center justify-center text-7xl md:text-8xl font-bold text-gray-700 gap-3">
                 <span id="factor1">?</span>
@@ -172,31 +200,32 @@
         const translations = {
             tr: {
                 titleMain: "Çarpım<br>Canavarı",
-                titleSub: "Zor Sayılar Modu",
-                descText: "5, 6, 7, 8 ve 9 sayılarına daha çok çalışacağız!",
+                placeholderName: "Adın ne?",
                 btnStart: "BAŞLA!",
                 labelScore: "Yıldız:",
                 labelStreak: "Seri:",
                 labelAnswer: "Doğru Cevap:",
                 btnDel: "SİL",
-                praises: ["Harika!", "Süper!", "Doğru!", "Aferin!", "Böyle Devam!"],
-                tryAgain: "Tekrar dene!"
+                warningName: "Lütfen bir isim yaz!",
+                praises: ["Harika", "Süper", "Doğru", "Aferin", "Böyle Devam", "Müthişsin"],
+                tryAgain: "Tekrar dene"
             },
             en: {
                 titleMain: "Math<br>Monster",
-                titleSub: "Hard Mode",
-                descText: "We will focus on 5, 6, 7, 8 and 9!",
+                placeholderName: "What's your name?",
                 btnStart: "START!",
                 labelScore: "Star:",
                 labelStreak: "Streak:",
                 labelAnswer: "Answer:",
                 btnDel: "DEL",
-                praises: ["Great!", "Super!", "Correct!", "Awesome!", "Keep it up!"],
-                tryAgain: "Try again!"
+                warningName: "Please enter a name!",
+                praises: ["Great", "Super", "Correct", "Awesome", "Keep it up", "Amazing"],
+                tryAgain: "Try again"
             }
         };
 
-        let currentLang = 'tr'; // Default Language
+        let currentLang = 'tr';
+        let playerName = "";
 
         function setLanguage(lang) {
             currentLang = lang;
@@ -204,13 +233,13 @@
 
             // Update UI Static Text
             document.getElementById('title-main').innerHTML = t.titleMain;
-            document.getElementById('title-sub').innerText = t.titleSub;
-            document.getElementById('desc-text').innerText = t.descText;
+            document.getElementById('player-name-input').placeholder = t.placeholderName;
             document.getElementById('btn-start').innerText = t.btnStart;
             document.getElementById('label-score').innerText = t.labelScore;
             document.getElementById('label-streak').innerText = t.labelStreak;
             document.getElementById('label-answer').innerText = t.labelAnswer;
             document.getElementById('btn-del').innerText = t.btnDel;
+            document.getElementById('name-warning').innerText = t.warningName;
 
             // Toggle Flag Visuals
             document.getElementById('btn-tr').classList.toggle('active', lang === 'tr');
@@ -243,7 +272,20 @@
         }
 
         function startGame() {
+            const nameInput = document.getElementById('player-name-input');
+            const warning = document.getElementById('name-warning');
+            
+            // Check name
+            if(nameInput.value.trim() === "") {
+                warning.style.opacity = "1";
+                nameInput.classList.add('shake');
+                setTimeout(() => nameInput.classList.remove('shake'), 400);
+                return;
+            }
+
+            playerName = nameInput.value.trim();
             initWeights();
+            
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             document.getElementById('game-screen').classList.add('flex');
@@ -346,19 +388,21 @@
             qBox.classList.add('border-green-400');
             qBox.style.borderColor = '#4ade80';
             
+            // Kişiselleştirilmiş övgü
             const fb = document.getElementById('feedback-message');
-            fb.innerText = getRandomPraise();
+            fb.innerText = getRandomPraise() + ", " + playerName + "!";
             fb.style.opacity = '1';
             fb.classList.add('text-green-500');
 
             fireConfetti();
+            spawnEmojis('happy'); // Mutlu emojiler fırlat
 
             setTimeout(() => {
                 qBox.style.borderColor = '#3b82f6';
                 fb.style.opacity = '0';
                 fb.classList.remove('text-green-500');
                 generateQuestion();
-            }, 1000);
+            }, 1200);
         }
 
         function handleWrong(key, keyReverse, correctAnswer) {
@@ -376,9 +420,11 @@
             answerDisplay.classList.remove('translate-y-full');
 
             const fb = document.getElementById('feedback-message');
-            fb.innerText = translations[currentLang].tryAgain;
+            fb.innerText = translations[currentLang].tryAgain + "!";
             fb.style.opacity = '1';
             fb.classList.add('text-red-500');
+
+            spawnEmojis('sad'); // Üzgün emojiler fırlat
 
             setTimeout(() => {
                 qBox.classList.remove('shake');
@@ -396,6 +442,41 @@
             const praises = translations[currentLang].praises;
             return praises[Math.floor(Math.random() * praises.length)];
         }
+
+        // --- SPAWN EMOJIS ---
+        const happyEmojis = ['🎉', '🌟', '👏', '🥳', '🦁', '💯', '⭐'];
+        const sadEmojis = ['😢', '😭', '🥺', '🤔', '❌', '⛔'];
+
+        function spawnEmojis(type) {
+            const count = 12; // Kaç emoji çıkacak
+            const emojiList = type === 'happy' ? happyEmojis : sadEmojis;
+            const animClass = type === 'happy' ? 'emoji-happy' : 'emoji-sad';
+            const gameScreen = document.getElementById('game-screen');
+
+            for (let i = 0; i < count; i++) {
+                const emoji = document.createElement('span');
+                emoji.innerText = emojiList[Math.floor(Math.random() * emojiList.length)];
+                emoji.classList.add('emoji-animated', animClass);
+                
+                // Rastgele pozisyonlama (ekranın ortasına yakın)
+                const randomX = Math.random() * window.innerWidth * 0.6 + window.innerWidth * 0.2;
+                const randomY = Math.random() * window.innerHeight * 0.4 + window.innerHeight * 0.3;
+                
+                emoji.style.left = `${randomX}px`;
+                emoji.style.top = `${randomY}px`;
+                
+                // Her biri biraz farklı zamanda başlasın
+                emoji.style.animationDelay = `${Math.random() * 0.3}s`;
+
+                document.body.appendChild(emoji);
+
+                // Animasyon bitince sil
+                setTimeout(() => {
+                    emoji.remove();
+                }, 1500);
+            }
+        }
+
 
         // --- CONFETTI ---
         const canvas = document.getElementById("confetti");
@@ -448,7 +529,6 @@
             }
         }
 
-        // Initialize with default language
         setLanguage('tr');
     </script>
 </body>
