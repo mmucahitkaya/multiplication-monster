@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Monster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            touch-action: manipulation;
+            background-color: #f0f9ff;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            max-width: 500px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .numpad-btn {
+            background-color: white;
+            border-bottom: 6px solid #e2e8f0;
+            border-radius: 1rem;
+            transition: all 0.1s;
+        }
+
+        .numpad-btn:active {
+            transform: translateY(4px);
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .screen-area {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 4px solid #3b82f6;
+        }
+
+        /* Language Toggle Styles */
+        .lang-btn {
+            opacity: 0.5;
+            filter: grayscale(100%);
+            transition: all 0.2s;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            filter: grayscale(0%);
+            transform: scale(1.1);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+        }
+
+        #confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .hidden { display: none !important; }
+
+        .btn-blue { background-color: #3b82f6; color: white; border-bottom-color: #1d4ed8; }
+        .btn-red { background-color: #ef4444; color: white; border-bottom-color: #b91c1c; }
+        .btn-green { background-color: #22c55e; color: white; border-bottom-color: #15803d; }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti"></canvas>
+
+    <!-- Language Selector (Fixed Top Right) -->
+    <div class="absolute top-4 right-4 z-50 flex gap-2">
+        <button onclick="setLanguage('tr')" id="btn-tr" class="lang-btn active">🇹🇷</button>
+        <button onclick="setLanguage('en')" id="btn-en" class="lang-btn">🇬🇧</button>
+    </div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="game-container justify-center items-center text-center">
+        <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-2">Çarpım<br>Canavarı</h1>
+        <div class="text-center mb-6">
+            <span id="title-sub" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold">Zor Sayılar Modu</span>
+        </div>
+        <div class="text-8xl mb-6">🦁</div>
+        <p id="desc-text" class="text-gray-600 text-lg mb-8">5, 6, 7, 8 ve 9 sayılarına daha çok çalışacağız!</p>
+        <button id="btn-start" onclick="startGame()" class="w-full py-5 text-2xl font-bold rounded-2xl btn-green shadow-lg active:scale-95 transition-transform">
+            BAŞLA!
+        </button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="game-container hidden">
+        <!-- Top Bar: Score & Streak -->
+        <div class="flex justify-between items-center mb-4 mt-8"> <!-- mt-8 added for flag space -->
+            <div class="bg-yellow-100 px-4 py-2 rounded-xl border-b-4 border-yellow-300">
+                <span id="label-score" class="text-yellow-700 font-bold">Yıldız:</span>
+                <span id="score" class="text-2xl font-bold text-yellow-600">0</span>
+            </div>
+            <div class="bg-purple-100 px-4 py-2 rounded-xl border-b-4 border-purple-300">
+                <span id="label-streak" class="text-purple-700 font-bold">Seri:</span>
+                <span id="streak" class="text-2xl font-bold text-purple-600">0</span>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div id="question-box" class="screen-area flex flex-col items-center justify-center flex-grow mb-4 relative overflow-hidden p-4">
+            <div id="feedback-message" class="absolute top-4 font-bold text-xl text-gray-400 opacity-0 transition-opacity">Harika!</div>
+            
+            <div class="flex items-center justify-center text-7xl md:text-8xl font-bold text-gray-700 gap-3">
+                <span id="factor1">?</span>
+                <span class="text-blue-400 text-5xl">x</span>
+                <span id="factor2">?</span>
+            </div>
+            
+            <div class="mt-6 flex items-center gap-2">
+                <span class="text-5xl text-gray-300">=</span>
+                <div id="user-answer" class="h-20 min-w-[120px] px-4 bg-gray-100 rounded-xl flex items-center justify-center text-6xl font-bold text-blue-600 border-2 border-dashed border-gray-300"></div>
+            </div>
+
+            <!-- Hint Area -->
+            <div id="correct-answer-display" class="absolute bottom-0 w-full bg-red-100 text-red-500 py-3 text-center font-bold text-xl transform translate-y-full transition-transform">
+                <span id="label-answer">Doğru Cevap:</span> <span id="real-answer" class="text-3xl">0</span>
+            </div>
+        </div>
+
+        <!-- Numpad -->
+        <div class="grid grid-cols-3 gap-2 h-auto pb-4">
+            <button onclick="addNumber(1)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">1</button>
+            <button onclick="addNumber(2)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">2</button>
+            <button onclick="addNumber(3)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">3</button>
+            
+            <button onclick="addNumber(4)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">4</button>
+            <button onclick="addNumber(5)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">5</button>
+            <button onclick="addNumber(6)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">6</button>
+            
+            <button onclick="addNumber(7)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">7</button>
+            <button onclick="addNumber(8)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">8</button>
+            <button onclick="addNumber(9)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">9</button>
+            
+            <button onclick="deleteNumber()" id="btn-del" class="numpad-btn btn-red text-xl py-4 font-bold">SİL</button>
+            <button onclick="addNumber(0)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">0</button>
+            <button onclick="checkAnswer()" class="numpad-btn btn-green text-xl py-4 font-bold">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // --- TRANSLATION DATA ---
+        const translations = {
+            tr: {
+                titleMain: "Çarpım<br>Canavarı",
+                titleSub: "Zor Sayılar Modu",
+                descText: "5, 6, 7, 8 ve 9 sayılarına daha çok çalışacağız!",
+                btnStart: "BAŞLA!",
+                labelScore: "Yıldız:",
+                labelStreak: "Seri:",
+                labelAnswer: "Doğru Cevap:",
+                btnDel: "SİL",
+                praises: ["Harika!", "Süper!", "Doğru!", "Aferin!", "Böyle Devam!"],
+                tryAgain: "Tekrar dene!"
+            },
+            en: {
+                titleMain: "Math<br>Monster",
+                titleSub: "Hard Mode",
+                descText: "We will focus on 5, 6, 7, 8 and 9!",
+                btnStart: "START!",
+                labelScore: "Star:",
+                labelStreak: "Streak:",
+                labelAnswer: "Answer:",
+                btnDel: "DEL",
+                praises: ["Great!", "Super!", "Correct!", "Awesome!", "Keep it up!"],
+                tryAgain: "Try again!"
+            }
+        };
+
+        let currentLang = 'tr'; // Default Language
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            // Update UI Static Text
+            document.getElementById('title-main').innerHTML = t.titleMain;
+            document.getElementById('title-sub').innerText = t.titleSub;
+            document.getElementById('desc-text').innerText = t.descText;
+            document.getElementById('btn-start').innerText = t.btnStart;
+            document.getElementById('label-score').innerText = t.labelScore;
+            document.getElementById('label-streak').innerText = t.labelStreak;
+            document.getElementById('label-answer').innerText = t.labelAnswer;
+            document.getElementById('btn-del').innerText = t.btnDel;
+
+            // Toggle Flag Visuals
+            document.getElementById('btn-tr').classList.toggle('active', lang === 'tr');
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+        }
+
+        // --- GAME STATE ---
+        let currentFactor1 = 1;
+        let currentFactor2 = 1;
+        let currentInput = "";
+        let score = 0;
+        let streak = 0;
+        
+        let questionWeights = {};
+        const MAX_WEIGHT = 20; 
+        const MIN_WEIGHT = 1;
+        const WEIGHT_PENALTY = 5; 
+        const WEIGHT_REWARD = 1;
+
+        function initWeights() {
+            for(let i=1; i<=9; i++) {
+                for(let j=1; j<=9; j++) {
+                    let weight = 1;
+                    if (i >= 5 || j >= 5) weight = 4;
+                    if (i >= 5 && j >= 5) weight = 10;
+                    if (i === 1 || j === 1) weight = 1;
+                    questionWeights[`${i}x${j}`] = weight;
+                }
+            }
+        }
+
+        function startGame() {
+            initWeights();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            let totalWeight = 0;
+            const keys = Object.keys(questionWeights);
+            
+            keys.forEach(key => totalWeight += questionWeights[key]);
+
+            let randomNum = Math.random() * totalWeight;
+            let selectedKey = keys[keys.length - 1];
+
+            for (let key of keys) {
+                randomNum -= questionWeights[key];
+                if (randomNum <= 0) {
+                    selectedKey = key;
+                    break;
+                }
+            }
+
+            const parts = selectedKey.split('x');
+            if(parts[0] == currentFactor1 && parts[1] == currentFactor2 && keys.length > 1) {
+                generateQuestion(); 
+                return;
+            }
+
+            currentFactor1 = parseInt(parts[0]);
+            currentFactor2 = parseInt(parts[1]);
+
+            if(Math.random() > 0.5) {
+                document.getElementById('factor1').innerText = currentFactor1;
+                document.getElementById('factor2').innerText = currentFactor2;
+            } else {
+                document.getElementById('factor1').innerText = currentFactor2;
+                document.getElementById('factor2').innerText = currentFactor1;
+            }
+
+            currentInput = "";
+            updateInputDisplay();
+            
+            const qBox = document.getElementById('question-box');
+            qBox.classList.remove('shake');
+            document.getElementById('correct-answer-display').classList.add('translate-y-full');
+        }
+
+        function addNumber(num) {
+            if (currentInput.length < 3) {
+                currentInput += num;
+                updateInputDisplay();
+            }
+        }
+
+        function deleteNumber() {
+            currentInput = currentInput.slice(0, -1);
+            updateInputDisplay();
+        }
+
+        function updateInputDisplay() {
+            const display = document.getElementById('user-answer');
+            display.innerText = currentInput;
+            
+            if(currentInput === "") {
+                display.classList.add('border-dashed');
+                display.classList.remove('bg-white');
+            } else {
+                display.classList.remove('border-dashed');
+                display.classList.add('bg-white');
+            }
+        }
+
+        function checkAnswer() {
+            if (currentInput === "") return;
+
+            const userAnswer = parseInt(currentInput);
+            const correctAnswer = currentFactor1 * currentFactor2;
+            const key = `${currentFactor1}x${currentFactor2}`;
+            const keyReverse = `${currentFactor2}x${currentFactor1}`;
+
+            if (userAnswer === correctAnswer) {
+                handleCorrect(key, keyReverse);
+            } else {
+                handleWrong(key, keyReverse, correctAnswer);
+            }
+        }
+
+        function handleCorrect(key, keyReverse) {
+            score += 10;
+            streak++;
+            
+            questionWeights[key] = Math.max(MIN_WEIGHT, questionWeights[key] - WEIGHT_REWARD);
+            if(questionWeights[keyReverse]) questionWeights[keyReverse] = questionWeights[key];
+
+            document.getElementById('score').innerText = score;
+            document.getElementById('streak').innerText = streak;
+            
+            const qBox = document.getElementById('question-box');
+            qBox.classList.add('border-green-400');
+            qBox.style.borderColor = '#4ade80';
+            
+            const fb = document.getElementById('feedback-message');
+            fb.innerText = getRandomPraise();
+            fb.style.opacity = '1';
+            fb.classList.add('text-green-500');
+
+            fireConfetti();
+
+            setTimeout(() => {
+                qBox.style.borderColor = '#3b82f6';
+                fb.style.opacity = '0';
+                fb.classList.remove('text-green-500');
+                generateQuestion();
+            }, 1000);
+        }
+
+        function handleWrong(key, keyReverse, correctAnswer) {
+            streak = 0;
+            questionWeights[key] = Math.min(MAX_WEIGHT, questionWeights[key] + WEIGHT_PENALTY);
+            if(questionWeights[keyReverse]) questionWeights[keyReverse] = questionWeights[key];
+
+            document.getElementById('streak').innerText = streak;
+
+            const qBox = document.getElementById('question-box');
+            qBox.classList.add('shake');
+            
+            const answerDisplay = document.getElementById('correct-answer-display');
+            document.getElementById('real-answer').innerText = correctAnswer;
+            answerDisplay.classList.remove('translate-y-full');
+
+            const fb = document.getElementById('feedback-message');
+            fb.innerText = translations[currentLang].tryAgain;
+            fb.style.opacity = '1';
+            fb.classList.add('text-red-500');
+
+            setTimeout(() => {
+                qBox.classList.remove('shake');
+                answerDisplay.classList.add('translate-y-full');
+                fb.style.opacity = '0';
+                fb.classList.remove('text-red-500');
+                
+                currentInput = "";
+                updateInputDisplay();
+                generateQuestion();
+            }, 2500);
+        }
+
+        function getRandomPraise() {
+            const praises = translations[currentLang].praises;
+            return praises[Math.floor(Math.random() * praises.length)];
+        }
+
+        // --- CONFETTI ---
+        const canvas = document.getElementById("confetti");
+        const ctx = canvas.getContext("2d");
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function fireConfetti() {
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 1) * 20,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    size: Math.random() * 8 + 4,
+                    life: 1
+                });
+            }
+            if (particles.length <= 50) requestAnimationFrame(updateConfetti);
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.5;
+                p.life -= 0.02;
+                p.size *= 0.95;
+                
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.life <= 0) particles.splice(index, 1);
+            });
+
+            if (particles.length > 0) {
+                requestAnimationFrame(updateConfetti);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Initialize with default language
+        setLanguage('tr');
+    </script>
+</body>
+</html>
