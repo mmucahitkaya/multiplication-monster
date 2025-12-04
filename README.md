@@ -2,8 +2,7 @@
 
 A web-based multiplication table game with a **smart algorithm**, developed for primary school students (especially 2nd and 3rd grades).
 
-> **Live Demo:** [Paste your GitHub Pages Link Here]
-> *(Example: https://mmucahitkaya.github.io/multiplication-monster/)*
+> **Live Demo:** https://mmucahitkaya.github.io/multiplication-monster/
 
 ## 🎯 Project Purpose
 
