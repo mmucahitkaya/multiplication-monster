@@ -2,7 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- viewport-fit=cover: Çentikli telefonlar için ekranı tam kapla komutu -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Multiplication Monster</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -14,12 +15,17 @@
             background-color: #f0f9ff;
             overflow: hidden;
             user-select: none;
+            /* iPhone Çentik Ayarı (Safe Area) */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .game-container {
             max-width: 500px;
             margin: 0 auto;
             height: 100vh;
+            /* Yüksekliği safe-area düşülmüş ekran kadar yap */
+            height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -46,12 +52,21 @@
             border: 4px solid #3b82f6;
         }
 
-        /* Language Toggle Styles */
+        /* Language Toggle Styles - Safe Area Compatible */
+        .lang-container {
+            position: absolute;
+            top: 1rem; 
+            right: 1rem;
+            z-index: 50;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
         .lang-btn {
             opacity: 0.5;
             filter: grayscale(100%);
             transition: all 0.2s;
-            font-size: 2rem;
+            font-size: 1.8rem;
             cursor: pointer;
         }
         .lang-btn.active {
@@ -60,7 +75,21 @@
             transform: scale(1.1);
         }
 
-        /* Animations */
+        /* Emoji Selector Styles */
+        .emoji-option {
+            font-size: 2.5rem;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            border: 4px solid transparent;
+        }
+        .emoji-option.selected {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            transform: scale(1.1);
+        }
+
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
@@ -73,10 +102,10 @@
             background-color: #fee2e2 !important;
         }
 
-        /* --- NEW EMOJI ANIMATIONS --- */
+        /* EMOJI ANIMATIONS */
         @keyframes floatUp {
             0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-200px) scale(1.5) rotate(360deg); opacity: 0; }
+            100% { transform: translateY(-300px) scale(1.5) rotate(360deg); opacity: 0; }
         }
 
         @keyframes floatDown {
@@ -93,7 +122,7 @@
             font-size: 3rem;
         }
 
-        .emoji-happy { animation: floatUp 1s ease-out forwards; }
+        .emoji-happy { animation: floatUp 1.2s ease-out forwards; }
         .emoji-sad { animation: floatDown 1.5s ease-in forwards; }
 
         #confetti {
@@ -118,16 +147,22 @@
     <canvas id="confetti"></canvas>
 
     <!-- Language Selector -->
-    <div class="absolute top-4 right-4 z-50 flex gap-2">
+    <div class="lang-container">
         <button onclick="setLanguage('tr')" id="btn-tr" class="lang-btn active">🇹🇷</button>
         <button onclick="setLanguage('en')" id="btn-en" class="lang-btn">🇬🇧</button>
     </div>
 
     <!-- START SCREEN -->
-    <div id="start-screen" class="game-container justify-center items-center text-center">
-        <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-2">Çarpım<br>Canavarı</h1>
+    <div id="start-screen" class="game-container justify-center items-center text-center overflow-y-auto">
+        <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-2 mt-8">Çarpım<br>Canavarı</h1>
         
-        <div class="text-8xl mb-6 mt-4">🦁</div>
+        <!-- Emoji Selection Grid -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 mb-4 w-full">
+            <p id="label-choose-char" class="text-gray-500 mb-2 font-bold">Karakterini Seç:</p>
+            <div class="flex justify-center flex-wrap gap-2" id="emoji-grid">
+                <!-- Emojis injected via JS -->
+            </div>
+        </div>
         
         <!-- Name Input Section -->
         <div class="w-full mb-6">
@@ -143,55 +178,57 @@
     <!-- GAME SCREEN -->
     <div id="game-screen" class="game-container hidden">
         <!-- Top Bar: Score & Streak -->
-        <div class="flex justify-between items-center mb-4 mt-8"> 
-            <div class="bg-yellow-100 px-4 py-2 rounded-xl border-b-4 border-yellow-300">
-                <span id="label-score" class="text-yellow-700 font-bold">Yıldız:</span>
-                <span id="score" class="text-2xl font-bold text-yellow-600">0</span>
+        <!-- Added pt-8 md:pt-4 to push content down below safe area/notches -->
+        <div class="flex justify-between items-center mb-4 mt-12 md:mt-4"> 
+            <div class="bg-yellow-100 px-3 py-2 rounded-xl border-b-4 border-yellow-300 flex items-center gap-2">
+                <span id="label-score" class="text-yellow-700 font-bold text-sm md:text-base">Yıldız:</span>
+                <span id="score" class="text-xl md:text-2xl font-bold text-yellow-600">0</span>
             </div>
-            <div class="bg-purple-100 px-4 py-2 rounded-xl border-b-4 border-purple-300">
-                <span id="label-streak" class="text-purple-700 font-bold">Seri:</span>
-                <span id="streak" class="text-2xl font-bold text-purple-600">0</span>
+            <div class="bg-purple-100 px-3 py-2 rounded-xl border-b-4 border-purple-300 flex items-center gap-2">
+                <span id="label-streak" class="text-purple-700 font-bold text-sm md:text-base">Seri:</span>
+                <span id="streak" class="text-xl md:text-2xl font-bold text-purple-600">0</span>
             </div>
         </div>
 
         <!-- Question Area -->
-        <div id="question-box" class="screen-area flex flex-col items-center justify-center flex-grow mb-4 relative overflow-hidden p-4">
-            <div id="feedback-message" class="absolute top-4 font-bold text-xl text-gray-400 opacity-0 transition-opacity text-center w-full px-2">Harika!</div>
+        <div id="question-box" class="screen-area flex flex-col items-center justify-center flex-grow mb-4 relative overflow-hidden p-2">
+            <!-- Feedback moved slightly down to avoid overlap -->
+            <div id="feedback-message" class="absolute top-6 font-bold text-lg md:text-xl text-gray-400 opacity-0 transition-opacity text-center w-full px-2 z-10">Harika!</div>
             
-            <div class="flex items-center justify-center text-7xl md:text-8xl font-bold text-gray-700 gap-3">
+            <div class="flex items-center justify-center text-7xl md:text-8xl font-bold text-gray-700 gap-3 mt-4">
                 <span id="factor1">?</span>
                 <span class="text-blue-400 text-5xl">x</span>
                 <span id="factor2">?</span>
             </div>
             
-            <div class="mt-6 flex items-center gap-2">
+            <div class="mt-6 flex items-center gap-2 mb-4">
                 <span class="text-5xl text-gray-300">=</span>
                 <div id="user-answer" class="h-20 min-w-[120px] px-4 bg-gray-100 rounded-xl flex items-center justify-center text-6xl font-bold text-blue-600 border-2 border-dashed border-gray-300"></div>
             </div>
 
             <!-- Hint Area -->
-            <div id="correct-answer-display" class="absolute bottom-0 w-full bg-red-100 text-red-500 py-3 text-center font-bold text-xl transform translate-y-full transition-transform">
+            <div id="correct-answer-display" class="absolute bottom-0 w-full bg-red-100 text-red-500 py-3 text-center font-bold text-xl transform translate-y-full transition-transform z-20">
                 <span id="label-answer">Doğru Cevap:</span> <span id="real-answer" class="text-3xl">0</span>
             </div>
         </div>
 
         <!-- Numpad -->
-        <div class="grid grid-cols-3 gap-2 h-auto pb-4">
-            <button onclick="addNumber(1)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">1</button>
-            <button onclick="addNumber(2)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">2</button>
-            <button onclick="addNumber(3)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">3</button>
+        <div class="grid grid-cols-3 gap-2 h-auto pb-safe">
+            <button onclick="addNumber(1)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">1</button>
+            <button onclick="addNumber(2)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">2</button>
+            <button onclick="addNumber(3)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">3</button>
             
-            <button onclick="addNumber(4)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">4</button>
-            <button onclick="addNumber(5)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">5</button>
-            <button onclick="addNumber(6)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">6</button>
+            <button onclick="addNumber(4)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">4</button>
+            <button onclick="addNumber(5)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">5</button>
+            <button onclick="addNumber(6)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">6</button>
             
-            <button onclick="addNumber(7)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">7</button>
-            <button onclick="addNumber(8)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">8</button>
-            <button onclick="addNumber(9)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">9</button>
+            <button onclick="addNumber(7)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">7</button>
+            <button onclick="addNumber(8)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">8</button>
+            <button onclick="addNumber(9)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">9</button>
             
-            <button onclick="deleteNumber()" id="btn-del" class="numpad-btn btn-red text-xl py-4 font-bold">SİL</button>
-            <button onclick="addNumber(0)" class="numpad-btn text-3xl py-4 font-bold text-gray-600">0</button>
-            <button onclick="checkAnswer()" class="numpad-btn btn-green text-xl py-4 font-bold">OK</button>
+            <button onclick="deleteNumber()" id="btn-del" class="numpad-btn btn-red text-xl py-3 md:py-4 font-bold">SİL</button>
+            <button onclick="addNumber(0)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">0</button>
+            <button onclick="checkAnswer()" class="numpad-btn btn-green text-xl py-3 md:py-4 font-bold">OK</button>
         </div>
     </div>
 
@@ -201,31 +238,66 @@
             tr: {
                 titleMain: "Çarpım<br>Canavarı",
                 placeholderName: "Adın ne?",
+                labelChar: "Karakterini Seç:",
                 btnStart: "BAŞLA!",
                 labelScore: "Yıldız:",
                 labelStreak: "Seri:",
                 labelAnswer: "Doğru Cevap:",
                 btnDel: "SİL",
                 warningName: "Lütfen bir isim yaz!",
-                praises: ["Harika", "Süper", "Doğru", "Aferin", "Böyle Devam", "Müthişsin"],
+                // DIVERSE PRAISES
+                praises: [
+                    "Harika", "Süper", "Doğru", "Aferin", "Böyle Devam", 
+                    "Müthişsin", "Efsanesin", "Matematik Dehası", 
+                    "Şimşek Gibisin", "Durmak Yok", "İnanılmaz", "Çok İyisin"
+                ],
                 tryAgain: "Tekrar dene"
             },
             en: {
                 titleMain: "Math<br>Monster",
                 placeholderName: "What's your name?",
+                labelChar: "Choose Character:",
                 btnStart: "START!",
                 labelScore: "Star:",
                 labelStreak: "Streak:",
                 labelAnswer: "Answer:",
                 btnDel: "DEL",
                 warningName: "Please enter a name!",
-                praises: ["Great", "Super", "Correct", "Awesome", "Keep it up", "Amazing"],
+                // DIVERSE PRAISES
+                praises: [
+                    "Great", "Super", "Correct", "Awesome", "Keep it up", 
+                    "Amazing", "Legendary", "Math Genius", 
+                    "Lightning Fast", "Unstoppable", "Incredible", "Very Good"
+                ],
                 tryAgain: "Try again"
             }
         };
 
         let currentLang = 'tr';
         let playerName = "";
+        let playerEmoji = "🦁"; // Default
+
+        // EMOJI LIST
+        const emojisToSelect = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱"];
+
+        function initEmojiGrid() {
+            const grid = document.getElementById('emoji-grid');
+            grid.innerHTML = "";
+            emojisToSelect.forEach(emoji => {
+                const btn = document.createElement('div');
+                btn.innerText = emoji;
+                btn.className = `emoji-option ${emoji === playerEmoji ? 'selected' : ''}`;
+                btn.onclick = () => selectEmoji(emoji, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectEmoji(emoji, btnElement) {
+            playerEmoji = emoji;
+            // Update UI
+            document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
+            btnElement.classList.add('selected');
+        }
 
         function setLanguage(lang) {
             currentLang = lang;
@@ -234,6 +306,7 @@
             // Update UI Static Text
             document.getElementById('title-main').innerHTML = t.titleMain;
             document.getElementById('player-name-input').placeholder = t.placeholderName;
+            document.getElementById('label-choose-char').innerText = t.labelChar;
             document.getElementById('btn-start').innerText = t.btnStart;
             document.getElementById('label-score').innerText = t.labelScore;
             document.getElementById('label-streak').innerText = t.labelStreak;
@@ -289,13 +362,16 @@
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             document.getElementById('game-screen').classList.add('flex');
+            
+            // Hide language button during game to prevent clicks, or keep it if desired
+            // Keeping it but it's safe now due to padding.
+            
             generateQuestion();
         }
 
         function generateQuestion() {
             let totalWeight = 0;
             const keys = Object.keys(questionWeights);
-            
             keys.forEach(key => totalWeight += questionWeights[key]);
 
             let randomNum = Math.random() * totalWeight;
@@ -388,14 +464,15 @@
             qBox.classList.add('border-green-400');
             qBox.style.borderColor = '#4ade80';
             
-            // Kişiselleştirilmiş övgü
+            // Kişiselleştirilmiş övgü + Emoji
             const fb = document.getElementById('feedback-message');
-            fb.innerText = getRandomPraise() + ", " + playerName + "!";
+            // Örnek: "Efsanesin 🦁 Ali!"
+            fb.innerText = getRandomPraise() + " " + playerEmoji + " " + playerName + "!";
             fb.style.opacity = '1';
             fb.classList.add('text-green-500');
 
             fireConfetti();
-            spawnEmojis('happy'); // Mutlu emojiler fırlat
+            spawnEmojis('happy'); 
 
             setTimeout(() => {
                 qBox.style.borderColor = '#3b82f6';
@@ -424,7 +501,7 @@
             fb.style.opacity = '1';
             fb.classList.add('text-red-500');
 
-            spawnEmojis('sad'); // Üzgün emojiler fırlat
+            spawnEmojis('sad');
 
             setTimeout(() => {
                 qBox.classList.remove('shake');
@@ -444,39 +521,32 @@
         }
 
         // --- SPAWN EMOJIS ---
-        const happyEmojis = ['🎉', '🌟', '👏', '🥳', '🦁', '💯', '⭐'];
+        const happyEmojis = ['🎉', '🌟', '👏', '🥳', '💯', '⭐']; // User avatar is added dynamically
         const sadEmojis = ['😢', '😭', '🥺', '🤔', '❌', '⛔'];
 
         function spawnEmojis(type) {
-            const count = 12; // Kaç emoji çıkacak
-            const emojiList = type === 'happy' ? happyEmojis : sadEmojis;
+            const count = 12; 
+            // Eğer mutluysa, kullanıcının seçtiği karakteri de fırlatılanlara ekle
+            let currentList = type === 'happy' ? [...happyEmojis, playerEmoji, playerEmoji] : sadEmojis;
+            
             const animClass = type === 'happy' ? 'emoji-happy' : 'emoji-sad';
-            const gameScreen = document.getElementById('game-screen');
-
+            
             for (let i = 0; i < count; i++) {
                 const emoji = document.createElement('span');
-                emoji.innerText = emojiList[Math.floor(Math.random() * emojiList.length)];
+                emoji.innerText = currentList[Math.floor(Math.random() * currentList.length)];
                 emoji.classList.add('emoji-animated', animClass);
                 
-                // Rastgele pozisyonlama (ekranın ortasına yakın)
-                const randomX = Math.random() * window.innerWidth * 0.6 + window.innerWidth * 0.2;
-                const randomY = Math.random() * window.innerHeight * 0.4 + window.innerHeight * 0.3;
+                const randomX = Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1;
+                const randomY = Math.random() * window.innerHeight * 0.5 + window.innerHeight * 0.2;
                 
                 emoji.style.left = `${randomX}px`;
                 emoji.style.top = `${randomY}px`;
-                
-                // Her biri biraz farklı zamanda başlasın
                 emoji.style.animationDelay = `${Math.random() * 0.3}s`;
 
                 document.body.appendChild(emoji);
-
-                // Animasyon bitince sil
-                setTimeout(() => {
-                    emoji.remove();
-                }, 1500);
+                setTimeout(() => { emoji.remove(); }, 1500);
             }
         }
-
 
         // --- CONFETTI ---
         const canvas = document.getElementById("confetti");
@@ -513,23 +583,18 @@
                 p.vy += 0.5;
                 p.life -= 0.02;
                 p.size *= 0.95;
-                
                 ctx.fillStyle = p.color;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
-
                 if (p.life <= 0) particles.splice(index, 1);
             });
-
-            if (particles.length > 0) {
-                requestAnimationFrame(updateConfetti);
-            } else {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
+            if (particles.length > 0) requestAnimationFrame(updateConfetti);
         }
 
+        // Init
         setLanguage('tr');
+        initEmojiGrid();
     </script>
 </body>
 </html>
