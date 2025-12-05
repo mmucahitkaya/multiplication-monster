@@ -16,9 +16,16 @@
 
         * {
             box-sizing: border-box;
-            touch-action: none; /* Oyunlar için kaydırmayı engelle */
+            touch-action: none; /* Oyunlar için genel kaydırmayı engelle */
             user-select: none;
             -webkit-user-select: none;
+        }
+
+        /* İsim girişi ve butonlar için dokunmayı serbest bırak */
+        input, button {
+            touch-action: manipulation;
+            user-select: auto; 
+            -webkit-user-select: auto;
         }
 
         body {
@@ -55,9 +62,10 @@
         .emoji-slider {
             display: flex; overflow-x: auto; gap: 20px;
             padding: 15px calc(50% - 35px); width: 100%;
-            scrollbar-width: none; cursor: grab; scroll-behavior: smooth;
+            scrollbar-width: none; cursor: grab; 
+            scroll-behavior: smooth; /* JS ile kontrol edilecek */
         }
-        .emoji-slider.active { cursor: grabbing; scroll-behavior: auto; }
+        .emoji-slider.active { cursor: grabbing; scroll-behavior: auto !important; }
         .emoji-slider::-webkit-scrollbar { display: none; }
         
         .char-item {
@@ -117,6 +125,16 @@
         
         .floating-score { position: absolute; font-weight: bold; font-size: 1.5rem; color: #fbbf24; animation: floatUpScore 1s forwards; pointer-events: none; z-index: 100; text-shadow: 1px 1px 0 #000; }
         @keyframes floatUpScore { 0% {transform:translateY(0); opacity:1} 100% {transform:translateY(-50px); opacity:0} }
+
+        /* YENİ: Uçuşan Emojiler */
+        .floating-emoji { 
+            position: fixed; pointer-events: none; z-index: 100; font-size: 3rem; 
+            animation: floatUpEmoji 1.5s ease-out forwards; 
+        }
+        @keyframes floatUpEmoji { 
+            0% {transform:translateY(0) scale(0.5); opacity:1} 
+            100% {transform:translateY(-200px) scale(1.5); opacity:0} 
+        }
 
     </style>
 </head>
@@ -185,8 +203,14 @@
         <div class="flex justify-between items-center px-4 mb-4">
             <button onclick="endGame()" class="bg-white px-3 py-1 rounded-lg text-sm font-bold text-gray-500 shadow">❌ ÇIKIŞ</button>
             <div class="flex gap-2">
-                <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none">
-                    <small class="text-[10px] opacity-70">PUAN</small>
+                 <!-- SERİ ROZETİ -->
+                 <div class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
+                    <small class="lbl-streak text-[10px] opacity-70">SERİ</small>
+                    <span id="c-streak">0</span>
+                </div>
+                <!-- PUAN ROZETİ -->
+                <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
+                    <small class="lbl-score text-[10px] opacity-70">PUAN</small>
                     <span id="c-score">0</span>
                 </div>
             </div>
@@ -195,7 +219,8 @@
         <!-- Soru Kartı -->
         <div class="flex-1 flex justify-center items-center p-4">
             <div id="c-card" class="bg-white w-full max-w-sm rounded-3xl shadow-xl border-4 border-blue-400 p-6 flex flex-col items-center relative">
-                <div id="c-feedback" class="absolute -top-12 text-2xl font-bold text-green-500 opacity-0 transition-opacity">Harika!</div>
+                <!-- KLASİK GERİ BİLDİRİM ALANI -->
+                <div id="c-feedback" class="absolute -top-16 w-full text-center text-3xl font-bold text-green-500 opacity-0 transition-opacity drop-shadow-sm">Harika!</div>
                 
                 <div class="flex items-center gap-4 text-gray-700 font-bold mb-6">
                     <span id="c-n1" class="text-6xl">?</span>
@@ -237,11 +262,23 @@
                 <div class="flex items-center gap-2 text-3xl font-bold text-slate-700">
                     <span id="b-n1"></span> <span class="text-blue-400">×</span> <span id="b-n2"></span> <span class="text-gray-400">=</span> <span class="text-blue-600">?</span>
                 </div>
-                <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg font-bold">
-                    <span id="b-score">0</span>⭐
+                <div class="flex gap-2">
+                    <!-- SERİ ROZETİ -->
+                    <div class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
+                        <small class="lbl-streak text-[10px] opacity-70">SERİ</small>
+                        <span id="b-streak">0</span>
+                    </div>
+                    <!-- PUAN ROZETİ -->
+                    <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
+                        <small class="lbl-score text-[10px] opacity-70">PUAN</small>
+                        <span id="b-score">0</span>
+                    </div>
                 </div>
             </div>
         </div>
+        
+        <!-- BALON GERİ BİLDİRİM ALANI -->
+        <div id="b-feedback" class="absolute top-24 left-0 w-full text-center text-4xl font-bold text-white z-30 pointer-events-none opacity-0 transition-opacity" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Harika!</div>
         
         <!-- Balon Alanı -->
         <div id="balloon-container"></div>
@@ -256,7 +293,10 @@
                 g1: "Klasik", g1d: "Soruyu bil, klavyeyle yaz",
                 g2: "Balonlar", g2d: "Doğru balonu patlat!",
                 back: "ÇIKIŞ",
-                pr: ["Harika", "Süper", "Doğru", "Aferin", "Müthiş", "Efsane", "Deha"]
+                ls: "PUAN", lstr: "SERİ",
+                pr: ["Harika", "Süper", "Doğru", "Aferin", "Müthiş", "Efsane", "Deha", "Şimşek", "Süpersin"],
+                sad: ["Üzülme!", "Tekrar Dene", "Pes Etme", "Seri Bozuldu :(", "Yapabilirsin!", "Az Kaldı!"],
+                milestone: ["Durdurulamazsın!", "Efsanevi Seri!", "Matematik Dehası!", "İnanılmaz!", "Ateş Ediyorsun! 🔥"]
             },
             en: {
                 t: "Math<br>Monster", p: "Your Name?", c: "CHOOSE CHARACTER", btn: "NEXT",
@@ -264,7 +304,10 @@
                 g1: "Classic", g1d: "Type the answer",
                 g2: "Balloons", g2d: "Pop the correct balloon!",
                 back: "EXIT",
-                pr: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legend", "Genius"]
+                ls: "SCORE", lstr: "STREAK",
+                pr: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legend", "Genius", "Fast", "Perfect"],
+                sad: ["Don't be sad", "Try Again", "Don't Give Up", "Streak Lost :(", "You Can Do It", "So Close!"],
+                milestone: ["Unstoppable!", "Legendary Streak!", "Math Genius!", "Incredible!", "On Fire! 🔥"]
             }
         };
 
@@ -272,6 +315,7 @@
         let pName = '', pChar = '🦁';
         let currentMode = null;
         let score = 0;
+        let streak = 0; // YENİ: Seri sayacı
         let qData = { n1: 1, n2: 1, ans: 1 };
         const emojis = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱", "🐶", "🐸"];
 
@@ -284,35 +328,63 @@
         function renderCharSlider() {
             const slider = document.getElementById('char-slider');
             
-            // --- Drag Logic Start ---
+            // --- Drag Logic Start (Mouse + Touch) ---
             let isDown = false;
             let startX;
             let scrollLeft;
             let isDragging = false; 
 
+            // MOUSE EVENTS
             slider.addEventListener('mousedown', (e) => {
                 isDown = true;
                 isDragging = false;
+                slider.style.scrollBehavior = 'auto'; // SMOOTH KAPAT
                 slider.classList.add('active');
-                startX = e.pageX - slider.offsetLeft;
+                startX = e.pageX;
                 scrollLeft = slider.scrollLeft;
             });
-            slider.addEventListener('mouseleave', () => {
+            
+            const endDrag = () => {
                 isDown = false;
                 slider.classList.remove('active');
-            });
-            slider.addEventListener('mouseup', () => {
-                isDown = false;
-                slider.classList.remove('active');
-            });
+                slider.style.scrollBehavior = 'smooth'; // SMOOTH AÇ
+            };
+            
+            slider.addEventListener('mouseleave', endDrag);
+            slider.addEventListener('mouseup', endDrag);
+            
             slider.addEventListener('mousemove', (e) => {
                 if(!isDown) return;
                 e.preventDefault();
-                const x = e.pageX - slider.offsetLeft;
-                const walk = (x - startX) * 2; // Scroll hızı
+                const x = e.pageX;
+                const walk = (startX - x) * 2; 
                 if(Math.abs(walk) > 5) isDragging = true;
-                slider.scrollLeft = scrollLeft - walk;
+                slider.scrollLeft = scrollLeft + walk;
             });
+
+            // TOUCH EVENTS - Telefondaki çakışmayı önlemek için güncellendi
+            slider.addEventListener('touchstart', (e) => {
+                isDown = true;
+                isDragging = false;
+                slider.style.scrollBehavior = 'auto'; // Sürüklerken animasyonu kapat
+                startX = e.touches[0].pageX;
+                scrollLeft = slider.scrollLeft;
+            }, {passive: false});
+
+            slider.addEventListener('touchend', () => {
+                isDown = false;
+                slider.style.scrollBehavior = 'smooth'; // Bırakınca animasyonu aç
+            });
+
+            slider.addEventListener('touchmove', (e) => {
+                if(!isDown) return;
+                // e.preventDefault(); // Sayfa kaymasını engelle
+                const x = e.touches[0].pageX;
+                const walk = (startX - x) * 2; 
+                if(Math.abs(walk) > 5) isDragging = true;
+                slider.scrollLeft = scrollLeft + walk;
+            }, {passive: false});
+
             // --- Drag Logic End ---
 
             emojis.forEach(e => {
@@ -359,6 +431,10 @@
             
             document.getElementById('g1-title').innerText = d.g1; document.getElementById('g1-desc').innerText = d.g1d;
             document.getElementById('g2-title').innerText = d.g2; document.getElementById('g2-desc').innerText = d.g2d;
+
+            // Etiketleri güncelle
+            document.querySelectorAll('.lbl-score').forEach(el => el.innerText = d.ls);
+            document.querySelectorAll('.lbl-streak').forEach(el => el.innerText = d.lstr);
         }
 
         function goToMenu() {
@@ -383,6 +459,7 @@
         function startGame(mode) {
             currentMode = mode;
             score = 0;
+            streak = 0; // Seriyi sıfırla
             document.getElementById('menu-view').classList.add('hidden');
             document.getElementById('menu-view').classList.remove('flex');
 
@@ -422,6 +499,72 @@
             if(!animating) { animating=true; loopConfetti(); }
         }
 
+        function getPraise() {
+            // 10'lu seri kontrolü
+            if (streak > 0 && streak % 10 === 0) {
+                const milestones = DB[lang].milestone;
+                return milestones[Math.floor(Math.random() * milestones.length)] + " " + streak + "!";
+            }
+            const list = DB[lang].pr;
+            const word = list[Math.floor(Math.random() * list.length)];
+            return `${word} ${pName} ${pChar}`;
+        }
+
+        function getSadMessage() {
+            const list = DB[lang].sad;
+            const word = list[Math.floor(Math.random() * list.length)];
+            return `${word} ${pName}`;
+        }
+
+        function showFeedback(elId, type = 'praise') {
+            const el = document.getElementById(elId);
+            if(!el) return;
+            
+            if(type === 'sad') {
+                el.innerText = getSadMessage();
+                el.style.color = '#ef4444'; // Kırmızı
+            } else {
+                el.innerText = getPraise();
+                el.style.color = (streak > 0 && streak % 10 === 0) ? '#a855f7' : '#22c55e'; // Mor (10'lu) veya Yeşil
+            }
+
+            el.style.opacity = 1;
+            el.style.transform = "scale(1.2)";
+            el.style.transition = "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            
+            setTimeout(() => {
+                el.style.transform = "scale(1)";
+                el.style.opacity = 0;
+            }, 1500); // Biraz daha uzun kalsın
+        }
+
+        function spawnEmoji(isHappy) {
+            let list = isHappy ? ['🎉','⭐', '✨', '🎈', pChar] : ['💩','🥀','🌧️','❌','🤔'];
+            // Eğer 10'lu seriyse daha coşkulu
+            if(isHappy && streak % 10 === 0) list = ['🏆', '🚀', '👑', '🔥', '💯'];
+
+            // 5-8 arası emoji fırlat
+            const count = 5 + Math.floor(Math.random() * 4);
+            
+            for(let i=0; i<count; i++) {
+                let el = document.createElement('div');
+                el.innerText = list[Math.floor(Math.random()*list.length)];
+                el.className = 'floating-emoji';
+                el.style.left = (10 + Math.random()*80) + '%';
+                el.style.top = (40 + Math.random()*30) + '%';
+                // Rastgele gecikme
+                el.style.animationDelay = (Math.random() * 0.5) + 's';
+                document.body.appendChild(el);
+                setTimeout(()=>el.remove(), 2000);
+            }
+        }
+
+
+        function updateStreakUI() {
+            document.getElementById('c-streak').innerText = streak;
+            document.getElementById('b-streak').innerText = streak;
+        }
+
         // --- OYUN 1: KLASİK ---
         let cInp = '';
         function initClassic() {
@@ -429,6 +572,7 @@
             el.classList.remove('hidden');
             el.classList.add('flex', 'flex-col');
             document.getElementById('c-score').innerText = score;
+            updateStreakUI();
             newClassicQ();
         }
 
@@ -456,11 +600,23 @@
             const card = document.getElementById('c-card');
             if(val === qData.ans) {
                 score += 10;
+                streak++; // Seri arttır
                 document.getElementById('c-score').innerText = score;
+                updateStreakUI();
+
                 card.style.borderColor = '#22c55e'; // Green
+                
+                showFeedback('c-feedback', 'praise'); // Mesajı göster
+                spawnEmoji(true); // Emojileri uçur
                 showConfetti();
+                
                 setTimeout(newClassicQ, 800);
             } else {
+                streak = 0; // Seri sıfırla
+                updateStreakUI();
+                showFeedback('c-feedback', 'sad'); // Üzgün mesaj
+                spawnEmoji(false); // Üzgün emojiler
+                
                 card.classList.add('shake');
                 card.style.borderColor = '#ef4444'; // Red
                 setTimeout(()=>card.classList.remove('shake'), 400);
@@ -477,7 +633,7 @@
             el.classList.remove('hidden');
             el.classList.add('flex', 'flex-col');
             document.getElementById('b-score').innerText = score;
-            
+            updateStreakUI();
             newBalloonLevel();
             startGameLoop_Balloon();
         }
@@ -582,7 +738,9 @@
         function checkBalloon(el, val, e) {
             if(val === qData.ans) {
                 score += 10;
+                streak++; // Seri arttır
                 document.getElementById('b-score').innerText = score;
+                updateStreakUI();
                 el.classList.add('popped');
                 
                 // Puan efekti
@@ -594,11 +752,18 @@
                 document.body.appendChild(floatScore);
                 setTimeout(()=>floatScore.remove(), 1000);
 
+                showFeedback('b-feedback', 'praise'); // Balon modunda mesajı göster
+                spawnEmoji(true); // Emojileri uçur
                 showConfetti();
                 
                 // Diğer balonları patlat ve yeni soruya geç
                 setTimeout(newBalloonLevel, 500);
             } else {
+                streak = 0; // Seri sıfırla
+                updateStreakUI();
+                showFeedback('b-feedback', 'sad');
+                spawnEmoji(false);
+                
                 // Yanlış cevap
                 el.classList.add('shake');
                 setTimeout(()=>el.classList.remove('shake'), 400);
