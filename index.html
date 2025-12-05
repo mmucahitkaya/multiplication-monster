@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-    <title>Multiplication Monster - Smart Edition</title>
+    <title>Multiplication Monster - Ultimate Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
@@ -16,12 +16,11 @@
 
         * {
             box-sizing: border-box;
-            touch-action: none; /* Oyunlar için genel kaydırmayı engelle */
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
         }
 
-        /* İsim girişi ve butonlar için dokunmayı serbest bırak */
         input, button, a {
             touch-action: manipulation;
             user-select: auto; 
@@ -63,7 +62,7 @@
             display: flex; overflow-x: auto; gap: 20px;
             padding: 15px calc(50% - 35px); width: 100%;
             scrollbar-width: none; cursor: grab; 
-            scroll-behavior: smooth; /* JS ile kontrol edilecek */
+            scroll-behavior: smooth;
         }
         .emoji-slider.active { cursor: grabbing; scroll-behavior: auto !important; }
         .emoji-slider::-webkit-scrollbar { display: none; }
@@ -115,7 +114,6 @@
         .balloon-string {
             width: 2px; height: 20px; background: rgba(0,0,0,0.2); margin-top: -2px;
         }
-        /* Balon Patlama Animasyonu */
         @keyframes pop { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
         .popped { animation: pop 0.2s forwards !important; pointer-events: none; }
 
@@ -126,7 +124,6 @@
         .floating-score { position: absolute; font-weight: bold; font-size: 1.5rem; color: #fbbf24; animation: floatUpScore 1s forwards; pointer-events: none; z-index: 100; text-shadow: 1px 1px 0 #000; }
         @keyframes floatUpScore { 0% {transform:translateY(0); opacity:1} 100% {transform:translateY(-50px); opacity:0} }
 
-        /* YENİ: Uçuşan Emojiler */
         .floating-emoji { 
             position: fixed; pointer-events: none; z-index: 100; font-size: 3rem; 
             animation: floatUpEmoji 1.5s ease-out forwards; 
@@ -142,7 +139,7 @@
 
     <canvas id="confetti" style="position:fixed; top:0; left:0; pointer-events:none; z-index:9999;"></canvas>
 
-    <!-- 1. BAŞLANGIÇ EKRANI (İsim & Karakter) -->
+    <!-- 1. BAŞLANGIÇ EKRANI -->
     <div id="start-view" class="full-screen items-center justify-center p-4 relative">
         <h1 id="title-txt" class="text-5xl font-bold text-blue-500 mb-6 text-center leading-tight">Çarpım<br>Canavarı</h1>
         
@@ -166,7 +163,6 @@
             <button onclick="setLang('en')" class="text-3xl hover:scale-110 transition-transform">🇬🇧</button>
         </div>
 
-        <!-- GITHUB LINK -->
         <a href="https://github.com/mmucahitkaya/multiplication-monster" target="_blank" class="absolute bottom-[calc(var(--safe-bottom)+10px)] right-4 text-blue-300 hover:text-blue-500 transition-colors opacity-70 hover:opacity-100" title="GitHub">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
@@ -184,7 +180,6 @@
         <h2 id="lbl-select-game" class="text-2xl font-bold text-indigo-400 mb-6">OYUN SEÇ</h2>
 
         <div class="flex flex-col gap-4 w-full max-w-md">
-            <!-- Oyun 1 -->
             <button onclick="startGame('classic')" class="relative overflow-hidden bg-white p-6 rounded-3xl shadow-lg border-b-8 border-blue-200 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 group">
                 <div class="text-5xl bg-blue-100 p-3 rounded-2xl">🧮</div>
                 <div class="text-left">
@@ -193,7 +188,6 @@
                 </div>
             </button>
 
-            <!-- Oyun 2 -->
             <button onclick="startGame('balloon')" class="relative overflow-hidden bg-white p-6 rounded-3xl shadow-lg border-b-8 border-pink-200 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 group">
                 <div class="text-5xl bg-pink-100 p-3 rounded-2xl">🎈</div>
                 <div class="text-left">
@@ -210,14 +204,24 @@
         <div class="flex justify-between items-center px-4 mb-4">
             <button onclick="endGame()" class="bg-white px-3 py-1 rounded-lg text-sm font-bold text-gray-500 shadow">❌ ÇIKIŞ</button>
             <div class="flex gap-2">
-                 <!-- SERİ ROZETİ -->
-                 <div class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
-                    <small class="lbl-streak text-[10px] opacity-70">SERİ</small>
+                <!-- SÜRE -->
+                <div class="bg-red-50 text-red-600 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                    <small class="text-[9px] opacity-70">SÜRE</small>
+                    <span id="c-timer">30</span>
+                </div>
+                <!-- CAN -->
+                <div class="bg-red-50 text-red-600 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                    <small class="lbl-lives text-[9px] opacity-70">CAN</small>
+                    <span id="c-lives">3</span>
+                </div>
+                <!-- SERİ -->
+                <div class="bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                    <small class="lbl-streak text-[9px] opacity-70">SERİ</small>
                     <span id="c-streak">0</span>
                 </div>
-                <!-- PUAN ROZETİ -->
-                <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
-                    <small class="lbl-score text-[10px] opacity-70">PUAN</small>
+                <!-- PUAN -->
+                <div class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                    <small class="lbl-score text-[9px] opacity-70">PUAN</small>
                     <span id="c-score">0</span>
                 </div>
             </div>
@@ -226,7 +230,6 @@
         <!-- Soru Kartı -->
         <div class="flex-1 flex justify-center items-center p-4">
             <div id="c-card" class="bg-white w-full max-w-sm rounded-3xl shadow-xl border-4 border-blue-400 p-6 flex flex-col items-center relative">
-                <!-- KLASİK GERİ BİLDİRİM ALANI -->
                 <div id="c-feedback" class="absolute -top-16 w-full text-center text-3xl font-bold text-green-500 opacity-0 transition-opacity drop-shadow-sm">Harika!</div>
                 
                 <div class="flex items-center gap-4 text-gray-700 font-bold mb-6">
@@ -262,7 +265,7 @@
 
     <!-- OYUN 2: BALON GÖRÜNÜMÜ -->
     <div id="game-balloon" class="full-screen hidden">
-        <!-- Soru Paneli (Üstte Sabit) -->
+        <!-- Soru Paneli -->
         <div class="absolute top-0 left-0 w-full z-20 pt-[var(--safe-top)]">
             <div class="mx-4 mt-2 bg-white/90 backdrop-blur rounded-2xl shadow-lg border-b-4 border-blue-300 p-2 flex justify-between items-center">
                 <button onclick="endGame()" class="text-2xl">❌</button>
@@ -270,21 +273,26 @@
                     <span id="b-n1"></span> <span class="text-blue-400">×</span> <span id="b-n2"></span> <span class="text-gray-400">=</span> <span class="text-blue-600">?</span>
                 </div>
                 <div class="flex gap-2">
-                    <!-- SERİ ROZETİ -->
-                    <div class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
-                        <small class="lbl-streak text-[10px] opacity-70">SERİ</small>
+                    <!-- CAN -->
+                    <div class="bg-red-50 text-red-600 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                        <small class="lbl-lives text-[9px] opacity-70">CAN</small>
+                        <span id="b-lives">3</span>
+                    </div>
+                    <!-- SERİ -->
+                    <div class="bg-purple-100 text-purple-700 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                        <small class="lbl-streak text-[9px] opacity-70">SERİ</small>
                         <span id="b-streak">0</span>
                     </div>
-                    <!-- PUAN ROZETİ -->
-                    <div class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[50px]">
-                        <small class="lbl-score text-[10px] opacity-70">PUAN</small>
+                    <!-- PUAN -->
+                    <div class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-lg font-bold flex flex-col items-center leading-none min-w-[45px]">
+                        <small class="lbl-score text-[9px] opacity-70">PUAN</small>
                         <span id="b-score">0</span>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- BALON GERİ BİLDİRİM ALANI -->
+        <!-- BALON GERİ BİLDİRİM -->
         <div id="b-feedback" class="absolute top-24 left-0 w-full text-center text-4xl font-bold text-white z-30 pointer-events-none opacity-0 transition-opacity" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Harika!</div>
         
         <!-- Balon Alanı -->
@@ -308,6 +316,18 @@
         </div>
     </div>
 
+    <!-- OYUN BİTTİ MODALI (YENİ) -->
+    <div id="gameover-modal" class="hidden absolute top-0 left-0 w-full h-full bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full border-4 border-red-200">
+            <div class="text-6xl mb-4">🥺</div>
+            <h2 id="go-title" class="text-3xl font-bold text-red-600 mb-2">Oyun Bitti!</h2>
+            <p id="go-score" class="text-2xl font-bold text-gray-700 mb-8">Skorun: 0</p>
+            <button onclick="endGame()" id="btn-go-end" class="w-full py-4 bg-blue-500 text-white rounded-xl font-bold shadow-[0_4px_0_#1d4ed8] active:shadow-none active:translate-y-[4px] transition-all text-xl">
+                Ana Menü
+            </button>
+        </div>
+    </div>
+
     <script>
         // --- ÇEVİRİ VE VERİTABANI ---
         const DB = {
@@ -317,11 +337,12 @@
                 g1: "Klasik", g1d: "Soruyu bil, klavyeyle yaz",
                 g2: "Balonlar", g2d: "Doğru balonu patlat!",
                 back: "ÇIKIŞ",
-                ls: "PUAN", lstr: "SERİ",
+                ls: "PUAN", lstr: "SERİ", llv: "CAN",
                 pr: ["Harika", "Süper", "Doğru", "Aferin", "Müthiş", "Efsane", "Deha", "Şimşek", "Süpersin"],
-                sad: ["Üzülme!", "Tekrar Dene", "Pes Etme", "Seri Bozuldu :(", "Yapabilirsin!", "Az Kaldı!"],
+                sad: ["Üzülme!", "Tekrar Dene", "Pes Etme", "Seri Bozuldu :(", "Yapabilirsin!", "Az Kaldı!", "Kaçırdın!", "Süre Bitti!"],
                 milestone: ["Durdurulamazsın!", "Efsanevi Seri!", "Matematik Dehası!", "İnanılmaz!", "Ateş Ediyorsun! 🔥"],
-                mt: "20 Soru Bitti!", md: "Harika gidiyorsun! Devam mı?", by: "Devam Et", bn: "Bitir"
+                mt: "20 Soru Bitti!", md: "Harika gidiyorsun! Devam mı?", by: "Devam Et", bn: "Bitir",
+                got: "Oyun Bitti!", gos: "Skorun:", gob: "Ana Menü"
             },
             en: {
                 t: "Math<br>Monster", p: "Your Name?", c: "CHOOSE CHARACTER", btn: "NEXT",
@@ -329,11 +350,12 @@
                 g1: "Classic", g1d: "Type the answer",
                 g2: "Balloons", g2d: "Pop the correct balloon!",
                 back: "EXIT",
-                ls: "SCORE", lstr: "STREAK",
+                ls: "SCORE", lstr: "STREAK", llv: "LIVES",
                 pr: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legend", "Genius", "Fast", "Perfect"],
-                sad: ["Don't be sad", "Try Again", "Don't Give Up", "Streak Lost :(", "You Can Do It", "So Close!"],
+                sad: ["Don't be sad", "Try Again", "Don't Give Up", "Streak Lost :(", "You Can Do It", "So Close!", "Missed!", "Time's Up!"],
                 milestone: ["Unstoppable!", "Legendary Streak!", "Math Genius!", "Incredible!", "On Fire! 🔥"],
-                mt: "20 Questions Done!", md: "You are doing great! Continue?", by: "Continue", bn: "Finish"
+                mt: "20 Questions Done!", md: "You are doing great! Continue?", by: "Continue", bn: "Finish",
+                got: "Game Over!", gos: "Score:", gob: "Main Menu"
             }
         };
 
@@ -342,15 +364,19 @@
         let currentMode = null;
         let score = 0;
         let streak = 0; 
-        let questionCount = 0; // Toplam soru sayacı
-        let isPaused = false; // Oyun durduruldu mu?
+        let questionCount = 0; 
+        let isPaused = false; 
+        let lives = 3; 
         let qData = { n1: 1, n2: 1, ans: 1 };
+        
+        // Klasik Mod Timer Değişkenleri
+        let cTimeLeft = 30;
+        let cTimerInt;
+
         const emojis = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱", "🐶", "🐸"];
         
-        // --- AKILLI TEKRAR SİSTEMİ (SMART REPETITION) ---
-        let mistakes = []; // Yanlış yapılan soruları tutan havuz
+        let mistakes = []; 
 
-        // --- BAŞLANGIÇ & MENÜ ---
         function init() {
             renderCharSlider();
             setLang('tr');
@@ -363,7 +389,6 @@
             let scrollLeft;
             let isDragging = false; 
 
-            // MOUSE EVENTS
             slider.addEventListener('mousedown', (e) => {
                 isDown = true;
                 isDragging = false;
@@ -391,7 +416,6 @@
                 slider.scrollLeft = scrollLeft + walk;
             });
 
-            // TOUCH EVENTS
             slider.addEventListener('touchstart', (e) => {
                 isDown = true;
                 isDragging = false;
@@ -456,15 +480,18 @@
             document.getElementById('g1-title').innerText = d.g1; document.getElementById('g1-desc').innerText = d.g1d;
             document.getElementById('g2-title').innerText = d.g2; document.getElementById('g2-desc').innerText = d.g2d;
 
-            // Etiketleri güncelle
             document.querySelectorAll('.lbl-score').forEach(el => el.innerText = d.ls);
             document.querySelectorAll('.lbl-streak').forEach(el => el.innerText = d.lstr);
+            document.querySelectorAll('.lbl-lives').forEach(el => el.innerText = d.llv); 
 
-            // Modal Textleri
             document.getElementById('modal-title').innerText = d.mt;
             document.getElementById('modal-desc').innerText = d.md;
             document.getElementById('btn-continue').innerText = d.by;
             document.getElementById('btn-end').innerText = d.bn;
+
+            // Game Over Textleri
+            document.getElementById('go-title').innerText = d.got;
+            document.getElementById('btn-go-end').innerText = d.gob;
         }
 
         function goToMenu() {
@@ -490,7 +517,8 @@
             currentMode = mode;
             score = 0;
             streak = 0; 
-            questionCount = 0; // Soru sayacını sıfırla
+            questionCount = 0; 
+            lives = 3; 
             isPaused = false;
             
             document.getElementById('menu-view').classList.add('hidden');
@@ -501,29 +529,35 @@
         }
 
         function endGame() {
-            // Temizlik
             isPaused = false;
-            document.getElementById('continue-modal').classList.add('hidden'); // Modalı kapat
+            document.getElementById('continue-modal').classList.add('hidden'); 
+            document.getElementById('gameover-modal').classList.add('hidden'); // Game Over kapat
             
             if(balloonInterval) clearInterval(balloonInterval);
+            if(cTimerInt) clearInterval(cTimerInt); 
             document.getElementById('balloon-container').innerHTML = '';
 
-            // Görünüm kapat
             document.getElementById('game-classic').classList.add('hidden');
             document.getElementById('game-balloon').classList.add('hidden');
 
-            // Menüye dön
             document.getElementById('menu-view').classList.remove('hidden');
             document.getElementById('menu-view').classList.add('flex');
         }
 
-        // --- MOLA SİSTEMİ ---
+        function showGameOver() {
+            isPaused = true;
+            if(cTimerInt) clearInterval(cTimerInt); 
+            
+            document.getElementById('go-score').innerText = (lang==='tr' ? "Skorun: " : "Score: ") + score;
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
         function checkContinue() {
             questionCount++;
             if(questionCount > 0 && questionCount % 20 === 0) {
-                isPaused = true; // Oyunu durdur
+                isPaused = true; 
                 document.getElementById('continue-modal').classList.remove('hidden');
-                return true; // Durduruldu sinyali ver
+                return true; 
             }
             return false;
         }
@@ -532,20 +566,21 @@
             isPaused = false;
             document.getElementById('continue-modal').classList.add('hidden');
             
-            // Hangi moddaysak oradan devam et
             if(currentMode === 'classic') {
                 newClassicQ();
             } else if(currentMode === 'balloon') {
                 newBalloonLevel();
-                // Balon animasyonları loop içinde isPaused kontrolü ile otomatik devam eder
             }
         }
 
-        // --- ORTAK MATEMATİK FONKSİYONLARI ---
-        
-        // Hata Yönetimi Fonksiyonları
+        function updateLivesUI() {
+            const l1 = document.getElementById('b-lives');
+            const l2 = document.getElementById('c-lives');
+            if(l1) l1.innerText = lives; 
+            if(l2) l2.innerText = lives; 
+        }
+
         function addMistake(n1, n2) {
-            // Hata listesine ekle (Çift yönlü kontrol: 7x8 ile 8x7 aynı zorluktur)
             const exists = mistakes.some(m => (m.n1 === n1 && m.n2 === n2) || (m.n1 === n2 && m.n2 === n1));
             if(!exists) {
                 mistakes.push({n1, n2});
@@ -553,26 +588,22 @@
         }
 
         function removeMistake(n1, n2) {
-            // Doğru bilinirse listeden çıkar
             mistakes = mistakes.filter(m => !((m.n1 === n1 && m.n2 === n2) || (m.n1 === n2 && m.n2 === n1)));
         }
 
         function generateQ() {
-            // 1. Akıllı Tekrar: Hata havuzunda soru varsa %60 ihtimalle oradan sor
             if(mistakes.length > 0 && Math.random() < 0.6) {
                 const m = mistakes[Math.floor(Math.random() * mistakes.length)];
                 qData = { n1: m.n1, n2: m.n2, ans: m.n1 * m.n2 };
                 return qData;
             }
 
-            // 2. Zorluk Ağırlığı: Büyük sayıları daha sık sor
             let a = Math.floor(Math.random() * 9) + 1;
             let b = Math.floor(Math.random() * 9) + 1;
             
-            // 6,7,8,9 sayılarını daha sık sormak için
             if(Math.random() > 0.3) { 
-                 a = Math.floor(Math.random() * 5) + 5; // 5,6,7,8,9
-                 b = Math.floor(Math.random() * 9) + 1; // 1-9
+                 a = Math.floor(Math.random() * 5) + 5; 
+                 b = Math.floor(Math.random() * 9) + 1; 
                  if(Math.random() > 0.5) b = Math.floor(Math.random() * 5) + 5;
             }
             
@@ -595,10 +626,14 @@
             return `${word} ${pName} ${pChar}`;
         }
 
-        function getSadMessage() {
+        function getSadMessage(isTimeout = false) {
+            if(isTimeout) return lang === 'tr' ? "Süre Bitti!" : "Time's Up!";
             const list = DB[lang].sad;
-            const word = list[Math.floor(Math.random() * list.length)];
-            return `${word} ${pName}`;
+            return list[Math.floor(Math.random() * list.length)] + ` ${pName}`;
+        }
+
+        function getMissedMessage() {
+            return lang === 'tr' ? "Kaçırdın!" : "Missed!";
         }
 
         function showFeedback(elId, type = 'praise') {
@@ -608,6 +643,12 @@
             if(type === 'sad') {
                 el.innerText = getSadMessage();
                 el.style.color = '#ef4444'; 
+            } else if (type === 'timeout') {
+                el.innerText = getSadMessage(true);
+                el.style.color = '#f59e0b';
+            } else if (type === 'missed') {
+                el.innerText = getMissedMessage();
+                el.style.color = '#f59e0b'; 
             } else {
                 el.innerText = getPraise();
                 el.style.color = (streak > 0 && streak % 10 === 0) ? '#a855f7' : '#22c55e'; 
@@ -645,24 +686,49 @@
             document.getElementById('b-streak').innerText = streak;
         }
 
-        // --- OYUN 1: KLASİK ---
+        // --- OYUN 1: KLASİK (GÜNCELLENDİ: Timer ve Can Eklendi) ---
         let cInp = '';
         function initClassic() {
             const el = document.getElementById('game-classic');
             el.classList.remove('hidden');
             el.classList.add('flex', 'flex-col');
             document.getElementById('c-score').innerText = score;
+            
+            lives = 3;
+            updateLivesUI();
             updateStreakUI();
             newClassicQ();
         }
 
         function newClassicQ() {
+            // Timer temizle
+            if(cTimerInt) clearInterval(cTimerInt);
+            
             generateQ();
             document.getElementById('c-n1').innerText = qData.n1;
             document.getElementById('c-n2').innerText = qData.n2;
             cInp = '';
             updCInp();
             document.getElementById('c-card').style.borderColor = '#60a5fa'; // Blue
+            
+            // Timer Başlat
+            startClassicTimer();
+        }
+
+        function startClassicTimer() {
+            cTimeLeft = 30; // 30 Saniye
+            document.getElementById('c-timer').innerText = cTimeLeft;
+            
+            cTimerInt = setInterval(() => {
+                if(!isPaused) {
+                    cTimeLeft--;
+                    document.getElementById('c-timer').innerText = cTimeLeft;
+                    if(cTimeLeft <= 0) {
+                        clearInterval(cTimerInt);
+                        handleClassicWrong(true); // Süre bitti
+                    }
+                }
+            }, 1000);
         }
 
         function cInput(n) { if(cInp.length<3) { cInp+=n; updCInp(); } }
@@ -674,41 +740,60 @@
             box.style.backgroundColor = cInp ? 'white' : '#f3f4f6';
         }
 
+        function handleClassicWrong(isTimeout) {
+            streak = 0; 
+            updateStreakUI();
+            
+            addMistake(qData.n1, qData.n2); 
+
+            lives--;
+            updateLivesUI();
+
+            const card = document.getElementById('c-card');
+            
+            if(isTimeout) showFeedback('c-feedback', 'timeout');
+            else showFeedback('c-feedback', 'sad'); 
+            
+            spawnEmoji(false); 
+            
+            card.classList.add('shake');
+            card.style.borderColor = '#ef4444'; // Red
+            setTimeout(()=>card.classList.remove('shake'), 400);
+            
+            cInp=''; updCInp();
+
+            if (lives <= 0) {
+                setTimeout(showGameOver, 500); // 0.5sn sonra game over göster
+            } else {
+                setTimeout(newClassicQ, 1000); // Yeni soruya geç
+            }
+        }
+
         function cCheck() {
             if(!cInp) return;
             const val = parseInt(cInp);
             const card = document.getElementById('c-card');
             
             if(val === qData.ans) {
+                clearInterval(cTimerInt); // Timer durdur
                 score += 10;
                 streak++; 
                 document.getElementById('c-score').innerText = score;
                 updateStreakUI();
                 
-                removeMistake(qData.n1, qData.n2); // Hata listesinden çıkar
+                removeMistake(qData.n1, qData.n2); 
 
                 card.style.borderColor = '#22c55e'; // Green
                 showFeedback('c-feedback', 'praise'); 
                 spawnEmoji(true); 
                 showConfetti();
                 
-                // Mola kontrolü (Eğer mola verildiyse sonraki soruya geçme)
                 if(checkContinue()) return;
 
                 setTimeout(newClassicQ, 800);
             } else {
-                streak = 0; 
-                updateStreakUI();
-                
-                addMistake(qData.n1, qData.n2); // Hata listesine ekle
-
-                showFeedback('c-feedback', 'sad'); 
-                spawnEmoji(false); 
-                
-                card.classList.add('shake');
-                card.style.borderColor = '#ef4444'; // Red
-                setTimeout(()=>card.classList.remove('shake'), 400);
-                cInp=''; updCInp();
+                clearInterval(cTimerInt);
+                handleClassicWrong(false);
             }
         }
 
@@ -721,6 +806,10 @@
             el.classList.remove('hidden');
             el.classList.add('flex', 'flex-col');
             document.getElementById('b-score').innerText = score;
+            
+            lives = 3; 
+            updateLivesUI();
+            
             updateStreakUI();
             newBalloonLevel();
             startGameLoop_Balloon();
@@ -782,7 +871,6 @@
             const speed = 1.5 + Math.random(); 
             
             function frame() {
-                // Eğer oyun duraklatıldıysa (Mola modu) döngü devam etsin ama hareket etmesin
                 if(isPaused) {
                     requestAnimationFrame(frame);
                     return;
@@ -795,14 +883,14 @@
                 el.style.top = pos + 'px';
                 
                 if(pos > window.innerHeight) {
-                    let currentLane = parseFloat(el.style.left); 
-                    el.remove();
-                    
                     if(document.getElementById('game-balloon').classList.contains('hidden')) return;
 
                     if(parseInt(el.dataset.val) === qData.ans) {
-                        createBalloon(qData.ans, 0, currentLane); 
+                        el.remove();
+                        handleBalloonMiss();
                     } else {
+                        let currentLane = parseFloat(el.style.left); 
+                        el.remove();
                         let wrong = qData.ans + Math.floor(Math.random()*10)+1;
                         createBalloon(wrong, 0, currentLane); 
                     }
@@ -813,8 +901,26 @@
             requestAnimationFrame(frame);
         }
 
+        function handleBalloonMiss() {
+            streak = 0; 
+            updateStreakUI();
+            addMistake(qData.n1, qData.n2); 
+            
+            lives--;
+            updateLivesUI();
+
+            if (lives <= 0) {
+                showGameOver();
+                return;
+            }
+            
+            showFeedback('b-feedback', 'missed'); 
+            spawnEmoji(false); 
+            setTimeout(newBalloonLevel, 500);
+        }
+
         function checkBalloon(el, val, e) {
-            if(isPaused) return; // Mola anında tıklamayı engelle
+            if(isPaused) return;
 
             if(val === qData.ans) {
                 score += 10;
@@ -823,7 +929,7 @@
                 updateStreakUI();
                 el.classList.add('popped');
                 
-                removeMistake(qData.n1, qData.n2); // Hata listesinden çıkar
+                removeMistake(qData.n1, qData.n2); 
 
                 const floatScore = document.createElement('div');
                 floatScore.className = 'floating-score';
@@ -837,15 +943,16 @@
                 spawnEmoji(true); 
                 showConfetti();
                 
-                // Mola Kontrolü
                 if(checkContinue()) return;
 
                 setTimeout(newBalloonLevel, 500);
             } else {
                 streak = 0; 
                 updateStreakUI();
-                
-                addMistake(qData.n1, qData.n2); // Hata listesine ekle
+                addMistake(qData.n1, qData.n2); 
+
+                lives--;
+                updateLivesUI();
 
                 showFeedback('b-feedback', 'sad');
                 spawnEmoji(false);
@@ -854,14 +961,18 @@
                 setTimeout(()=>el.classList.remove('shake'), 400);
                 score = Math.max(0, score - 5);
                 document.getElementById('b-score').innerText = score;
+
+                if (lives <= 0) {
+                    setTimeout(showGameOver, 500); // 0.5sn sonra game over
+                } else {
+                    setTimeout(newBalloonLevel, 500); // Yeni soruya geç
+                }
             }
         }
 
         function startGameLoop_Balloon() {
-            // Animasyonlar kendi içinde dönüyor
         }
 
-        // --- EFEKT (CONFETTI) ---
         const cvsC = document.getElementById('confetti');
         const ctxC = cvsC.getContext('2d');
         let parts = [], animating = false;
@@ -881,7 +992,6 @@
             else animating = false;
         }
 
-        // Başlat
         init();
 
     </script>
