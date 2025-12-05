@@ -162,24 +162,44 @@
             filter: grayscale(1);
         }
 
-        /* Emoji Seçici */
+        /* Emoji Seçici - iOS Style Horizontal Scroll */
         .emoji-grid {
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            max-height: 150px;
-            overflow-y: auto;
+            flex-wrap: nowrap; /* Tek satır olması için */
+            overflow-x: auto;  /* Yatay kaydırma */
+            overflow-y: hidden;
+            gap: 0.8rem;
+            padding: 0.5rem 0.2rem;
+            justify-content: flex-start;
+            
+            /* Scrollbar Gizleme (Temiz iOS görünümü) */
+            -ms-overflow-style: none;  /* IE ve Edge */
+            scrollbar-width: none;  /* Firefox */
+            
+            /* iOS Momentum Scrolling */
+            -webkit-overflow-scrolling: touch;
         }
+        
+        .emoji-grid::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
         .emoji-option {
-            font-size: 2rem;
-            padding: 0.2rem;
-            border-radius: 0.5rem;
-            border: 2px solid transparent;
+            font-size: 2.2rem;
+            padding: 0.4rem;
+            border-radius: 0.8rem;
+            border: 3px solid transparent;
+            flex-shrink: 0; /* Küçülmelerini engelle */
+            transition: transform 0.2s, background-color 0.2s;
+            cursor: pointer;
+        }
+        .emoji-option:active {
+            transform: scale(0.9);
         }
         .emoji-option.selected {
             background-color: #dbeafe;
             border-color: #3b82f6;
+            transform: scale(1.1);
         }
 
         /* Animasyonlar */
@@ -227,7 +247,7 @@
         <div class="w-full py-10">
             <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-6">Çarpım<br>Canavarı</h1>
             
-            <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 mb-6 w-full max-w-sm mx-auto">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 mb-6 w-full max-w-sm mx-auto overflow-hidden">
                 <p id="label-choose-char" class="text-gray-500 mb-2 font-bold">Karakterini Seç:</p>
                 <div class="emoji-grid" id="emoji-grid"></div>
             </div>
