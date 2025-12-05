@@ -53,4 +53,4 @@ This project does not require any server setup.
 3.  The game will start in your browser immediately.
 
 ---
-*Made with ♥ for my sibling.*
+*Made with ♥ for Erva.*
