@@ -11,581 +11,627 @@
         :root {
             --safe-top: env(safe-area-inset-top, 20px);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --app-height: 100dvh;
         }
 
         * {
             box-sizing: border-box;
-            /* Dokunmatik gecikmesini önler */
             touch-action: manipulation; 
         }
 
         body {
             font-family: 'Fredoka', sans-serif;
             background-color: #f0f9ff;
-            overflow: hidden;
-            user-select: none;
-            /* Dynamic Viewport Height: Adres çubuğu sorununu çözer */
-            height: 100dvh; 
-            width: 100vw;
             margin: 0;
             padding: 0;
+            height: var(--app-height);
+            width: 100vw;
+            overflow: hidden;
+            user-select: none;
         }
 
-        /* Ana Taşıyıcı: Tüm ekranı kaplar ve esnek kutu modelini kullanır */
-        .app-layout {
+        /* ANA İSKELET */
+        .main-layout {
+            display: flex;
+            flex-direction: column;
             height: 100%;
             width: 100%;
-            max-width: 600px; /* Tabletlerde çok genişlememesi için */
+            max-width: 500px;
             margin: 0 auto;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+        }
+
+        /* 1. ÜST PANEL */
+        .top-bar {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            width: 100%;
+            z-index: 20;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .stat-badge {
             display: flex;
             flex-direction: column;
-            /* Safe area boşlukları */
-            padding-top: calc(var(--safe-top) + 10px);
-            padding-bottom: calc(var(--safe-bottom) + 10px);
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-
-        /* 1. ÜST KISIM (Skorlar) - Küçülmez */
-        .header-section {
-            flex-shrink: 0; 
-            margin-bottom: 0.5rem;
-            /* Dil butonu ile çakışmaması için sağa boşluk */
-            padding-right: 60px; 
-        }
-
-        /* 2. ORTA KISIM (Soru Kutusu) - Esner */
-        .question-section {
-            flex-grow: 1; /* Kalan tüm boşluğu bu doldurur */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 3px solid #3b82f6;
-            margin-bottom: 1rem;
-            position: relative;
-            min-height: 180px; /* Çok küçülüp ezilmesini engeller */
-        }
-
-        /* 3. ALT KISIM (Tuşlar) - Küçülmez ama esnek */
-        .numpad-section {
-            flex-shrink: 0;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            /* Ekran yüksekliğine göre tuş yüksekliğini ayarla */
-            height: 40%; 
-            max-height: 350px;
-            min-height: 200px;
-        }
-
-        .numpad-btn {
-            background-color: white;
-            border-bottom: 4px solid #e2e8f0;
-            border-radius: 0.8rem;
-            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #4b5563;
-            transition: transform 0.1s;
-            cursor: pointer;
-            height: 100%; /* Grid hücresini doldur */
-        }
-
-        .numpad-btn:active {
-            transform: translateY(2px);
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        /* EKRAN KISAYSA (iPhone SE, Yatay mod vb) ÖZEL AYARLAR */
-        @media (max-height: 700px) {
-            .numpad-section {
-                height: 45%; /* Tuşlara biraz daha yer ver */
-                gap: 0.3rem;
-            }
-            .header-section {
-                margin-bottom: 0.2rem;
-            }
-            .question-section {
-                margin-bottom: 0.5rem;
-                min-height: 140px;
-            }
-            .numpad-btn {
-                font-size: 1.5rem;
-                border-bottom-width: 3px;
-                border-radius: 0.6rem;
-            }
-            /* Skor fontlarını küçült */
-            .score-text { font-size: 1rem !important; }
-            .score-val { font-size: 1.2rem !important; }
-            
-            /* Soru fontlarını küçült */
-            .q-text { font-size: 3.5rem !important; }
-            .ans-box { height: 3.5rem !important; min-width: 80px !important; font-size: 2.5rem !important; }
-        }
-
-        /* Dil Seçimi */
-        .lang-container {
-            position: fixed;
-            top: calc(var(--safe-top) + 10px);
-            right: 1rem;
-            z-index: 50;
-            display: flex;
-            gap: 0.5rem;
-        }
-        .lang-btn {
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(4px);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border: none;
-        }
-        .lang-btn.active {
-            background: white;
-            transform: scale(1.1);
-            opacity: 1;
-            filter: grayscale(0);
-        }
-        .lang-btn:not(.active) {
-            opacity: 0.6;
-            filter: grayscale(1);
-        }
-
-        /* Emoji Seçici - iOS Style Horizontal Scroll */
-        .emoji-grid {
-            display: flex;
-            flex-wrap: nowrap; /* Tek satır olması için */
-            overflow-x: auto;  /* Yatay kaydırma */
-            overflow-y: hidden;
-            gap: 0.8rem;
-            padding: 0.5rem 0.2rem;
-            justify-content: flex-start;
-            
-            /* Scrollbar Gizleme (Temiz iOS görünümü) */
-            -ms-overflow-style: none;  /* IE ve Edge */
-            scrollbar-width: none;  /* Firefox */
-            
-            /* iOS Momentum Scrolling */
-            -webkit-overflow-scrolling: touch;
+            padding: 5px 12px;
+            border-radius: 12px;
+            min-width: 70px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-bottom: 3px solid rgba(0,0,0,0.1);
         }
         
-        .emoji-grid::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
+        .stat-label { font-size: 0.8rem; font-weight: bold; opacity: 0.8; }
+        .stat-value { font-size: 1.4rem; font-weight: bold; line-height: 1.2; }
 
-        .emoji-option {
-            font-size: 2.2rem;
-            padding: 0.4rem;
-            border-radius: 0.8rem;
-            border: 3px solid transparent;
-            flex-shrink: 0; /* Küçülmelerini engelle */
-            transition: transform 0.2s, background-color 0.2s;
-            cursor: pointer;
+        .bg-yellow { background: #fef3c7; color: #b45309; }
+        .bg-purple { background: #f3e8ff; color: #7e22ce; }
+
+        /* Dil Seçimi */
+        .lang-switch {
+            display: flex;
+            gap: 5px;
+            background: white;
+            padding: 4px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .emoji-option:active {
-            transform: scale(0.9);
+        .lang-btn {
+            font-size: 1.5rem;
+            line-height: 1;
+            padding: 2px;
+            border-radius: 50%;
+            opacity: 0.4;
+            filter: grayscale(100%);
+            transition: all 0.2s;
+            border: none;
+            background: none;
         }
-        .emoji-option.selected {
-            background-color: #dbeafe;
-            border-color: #3b82f6;
+        .lang-btn.active {
+            opacity: 1;
+            filter: grayscale(0);
             transform: scale(1.1);
+            background: #eff6ff;
         }
 
-        /* Animasyonlar */
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.5); opacity: 1; }
-            100% { transform: translateY(-300px) scale(1.2); opacity: 0; }
+        /* 2. ORTA PANEL */
+        .game-area {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
         }
-        .emoji-animated {
-            position: fixed;
-            pointer-events: none;
-            z-index: 100;
+
+        .question-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
+            border: 3px solid #3b82f6;
+            width: 100%;
+            height: 100%;
+            max-height: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden; 
+        }
+
+        .operation-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+        
+        .num-text { font-size: clamp(4rem, 10vh, 6rem); }
+        .op-text { font-size: clamp(2rem, 5vh, 3rem); color: #60a5fa; }
+        
+        .answer-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .answer-box {
+            background: #f3f4f6;
+            min-width: 100px;
+            height: 70px;
+            border-radius: 16px;
+            border: 3px dashed #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 3rem;
-            animation: floatUp 1.5s ease-out forwards;
+            color: #2563eb;
+            font-weight: bold;
         }
-        .shake {
-            animation: shake 0.4s ease-in-out;
-            border-color: #ef4444 !important;
-            background-color: #fee2e2 !important;
+
+        .feedback-toast {
+            position: absolute;
+            top: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #9ca3af;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+
+        .correct-answer-toast {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #fee2e2;
+            color: #ef4444;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-radius: 0; 
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 3. ALT PANEL */
+        .controls-area {
+            flex: 0 0 auto;
+            padding: 10px 15px;
+            height: 40%;
+            max-height: 380px;
+        }
+
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+            height: 100%;
+        }
+
+        .key-btn {
+            background: white;
+            border: none;
+            border-bottom: 5px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #4b5563;
+            cursor: pointer;
+            transition: transform 0.1s;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        .key-btn:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .key-del { background: #fca5a5; color: white; border-bottom-color: #ef4444; font-size: 1.4rem; }
+        .key-ok { background: #86efac; color: white; border-bottom-color: #22c55e; font-size: 1.4rem; }
+
+        /* Başlangıç Ekranı */
+        .start-scroll-container {
+            overflow-y: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .emoji-slider-wrapper {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        .emoji-slider {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+            /* ÖNEMLİ: Baştaki ve sondaki elemanların ortaya gelebilmesi için %50 boşluk */
+            padding: 15px calc(50% - 35px); 
+            width: 100%;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            cursor: grab;
+            scroll-behavior: smooth;
+        }
+        .emoji-slider.active {
+            cursor: grabbing;
+            scroll-behavior: auto;
+        }
+        .emoji-slider::-webkit-scrollbar { display: none; }
+        
+        .char-item {
+            font-size: 2.8rem;
+            padding: 5px;
+            border: 4px solid transparent;
+            border-radius: 18px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
+            cursor: pointer;
+            user-select: none;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .char-item.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            transform: scale(1.15) translateY(-5px);
+            box-shadow: 0 10px 15px rgba(59, 130, 246, 0.2);
+            z-index: 10;
         }
 
         .hidden { display: none !important; }
-        #confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+        .shake { animation: shake 0.4s ease-in-out; border-color: #ef4444 !important; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+        
+        .floating-emoji { position: fixed; pointer-events: none; z-index: 100; font-size: 3rem; animation: floatUp 1.5s ease-out forwards; }
+        @keyframes floatUp { 0% {transform:translateY(0) scale(0.5); opacity:1} 100% {transform:translateY(-300px) scale(1.2); opacity:0} }
 
-        /* Renkler */
-        .btn-red { background-color: #ef4444; color: white; border-bottom-color: #b91c1c; }
-        .btn-green { background-color: #22c55e; color: white; border-bottom-color: #15803d; }
     </style>
 </head>
 <body>
 
-    <canvas id="confetti"></canvas>
+    <canvas id="confetti" style="position:fixed; top:0; left:0; pointer-events:none; z-index:50;"></canvas>
 
-    <div class="lang-container">
-        <button onclick="setLanguage('tr')" id="btn-tr" class="lang-btn active">🇹🇷</button>
-        <button onclick="setLanguage('en')" id="btn-en" class="lang-btn">🇬🇧</button>
-    </div>
-
-    <!-- START SCREEN -->
-    <div id="start-screen" class="app-layout justify-center items-center text-center" style="display: flex; overflow-y: auto;">
-        <div class="w-full py-10">
-            <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-6">Çarpım<br>Canavarı</h1>
-            
-            <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 mb-6 w-full max-w-sm mx-auto overflow-hidden">
-                <p id="label-choose-char" class="text-gray-500 mb-2 font-bold">Karakterini Seç:</p>
-                <div class="emoji-grid" id="emoji-grid"></div>
-            </div>
-            
-            <div class="w-full max-w-sm mx-auto mb-6">
-                <input type="text" id="player-name-input" placeholder="Adın ne?" class="w-full text-center text-2xl p-4 rounded-xl border-4 border-blue-200 focus:border-blue-500 outline-none text-gray-700 placeholder-gray-300">
-                <p id="name-warning" class="text-red-500 text-sm mt-2 opacity-0 transition-opacity">Lütfen bir isim yaz!</p>
-            </div>
-
-            <button id="btn-start" onclick="startGame()" class="w-full max-w-sm py-4 text-2xl font-bold rounded-2xl btn-green shadow-lg active:scale-95 transition-transform text-white border-b-4 border-green-700">
-                BAŞLA!
-            </button>
-        </div>
-    </div>
-
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="app-layout hidden">
+    <!-- OYUN ALANI -->
+    <div id="game-view" class="main-layout hidden">
         
-        <!-- HEADER (SKOR) -->
-        <div class="header-section flex justify-between items-center">
-            <div class="bg-yellow-100 px-3 py-2 rounded-xl border-b-4 border-yellow-300 flex items-center gap-2">
-                <span id="label-score" class="score-text text-yellow-700 font-bold text-sm">Yıldız:</span>
-                <span id="score" class="score-val text-xl font-bold text-yellow-600">0</span>
+        <!-- 1. ÜST BAR -->
+        <div class="top-bar">
+            <div class="stats-group">
+                <div class="stat-badge bg-yellow">
+                    <span id="lbl-score" class="stat-label">YILDIZ</span>
+                    <span id="score-val" class="stat-value">0</span>
+                </div>
+                <div class="stat-badge bg-purple">
+                    <span id="lbl-streak" class="stat-label">SERİ</span>
+                    <span id="streak-val" class="stat-value">0</span>
+                </div>
             </div>
-            <div class="bg-purple-100 px-3 py-2 rounded-xl border-b-4 border-purple-300 flex items-center gap-2">
-                <span id="label-streak" class="score-text text-purple-700 font-bold text-sm">Seri:</span>
-                <span id="streak" class="score-val text-xl font-bold text-purple-600">0</span>
+
+            <div class="lang-switch">
+                <button onclick="setLang('tr')" id="btn-tr" class="lang-btn active">🇹🇷</button>
+                <button onclick="setLang('en')" id="btn-en" class="lang-btn">🇬🇧</button>
             </div>
         </div>
 
-        <!-- SORU ALANI -->
-        <div id="question-box" class="question-section">
-            <div id="feedback-message" class="absolute top-4 font-bold text-lg text-gray-400 opacity-0 transition-opacity text-center w-full px-2">Harika!</div>
-            
-            <!-- Flex wrap yok, yan yana kalmaya zorluyoruz -->
-            <div class="flex items-center justify-center gap-2 mt-2">
-                <span id="factor1" class="q-text text-6xl md:text-7xl font-bold text-gray-700">?</span>
-                <span class="q-text text-4xl md:text-5xl text-blue-400 font-bold">x</span>
-                <span id="factor2" class="q-text text-6xl md:text-7xl font-bold text-gray-700">?</span>
-            </div>
-            
-            <div class="mt-4 flex items-center gap-2">
-                <span class="text-4xl text-gray-300">=</span>
-                <div id="user-answer" class="ans-box h-16 min-w-[100px] bg-gray-100 rounded-xl flex items-center justify-center text-5xl font-bold text-blue-600 border-2 border-dashed border-gray-300"></div>
-            </div>
+        <!-- 2. SORU KARTI -->
+        <div class="game-area">
+            <div id="q-card" class="question-card">
+                <div id="feedback" class="feedback-toast">Harika!</div>
 
-            <div id="correct-answer-display" class="absolute bottom-0 w-full bg-red-100 text-red-500 py-2 text-center font-bold transform translate-y-full transition-transform rounded-b-[1.3rem]">
-                <span id="label-answer">Cevap:</span> <span id="real-answer" class="text-2xl">0</span>
+                <div class="operation-row">
+                    <span id="n1" class="num-text">?</span>
+                    <span class="op-text">×</span>
+                    <span id="n2" class="num-text">?</span>
+                </div>
+
+                <div class="answer-area">
+                    <span class="op-text">=</span>
+                    <div id="ans-box" class="answer-box"></div>
+                </div>
+
+                <div id="correct-toast" class="correct-answer-toast">
+                    <span id="lbl-ans">Cevap:</span> <span id="real-ans">0</span>
+                </div>
             </div>
         </div>
 
-        <!-- NUMPAD -->
-        <div class="numpad-section">
-            <button onclick="addNumber(1)" class="numpad-btn">1</button>
-            <button onclick="addNumber(2)" class="numpad-btn">2</button>
-            <button onclick="addNumber(3)" class="numpad-btn">3</button>
+        <!-- 3. TUŞLAR -->
+        <div class="controls-area">
+            <div class="numpad-grid">
+                <button class="key-btn" onclick="input(1)">1</button>
+                <button class="key-btn" onclick="input(2)">2</button>
+                <button class="key-btn" onclick="input(3)">3</button>
+                <button class="key-btn" onclick="input(4)">4</button>
+                <button class="key-btn" onclick="input(5)">5</button>
+                <button class="key-btn" onclick="input(6)">6</button>
+                <button class="key-btn" onclick="input(7)">7</button>
+                <button class="key-btn" onclick="input(8)">8</button>
+                <button class="key-btn" onclick="input(9)">9</button>
+                <button id="btn-del" class="key-btn key-del" onclick="del()">SİL</button>
+                <button class="key-btn" onclick="input(0)">0</button>
+                <button class="key-btn key-ok" onclick="check()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BAŞLANGIÇ EKRANI -->
+    <div id="start-view" class="main-layout">
+        <div class="start-scroll-container">
+            <h1 id="title" class="text-5xl font-bold text-blue-500 mb-6 text-center">Çarpım<br>Canavarı</h1>
             
-            <button onclick="addNumber(4)" class="numpad-btn">4</button>
-            <button onclick="addNumber(5)" class="numpad-btn">5</button>
-            <button onclick="addNumber(6)" class="numpad-btn">6</button>
+            <div class="w-full bg-blue-50 p-2 rounded-2xl border border-blue-100 mb-6 shadow-inner">
+                <p id="lbl-char" class="text-gray-500 mb-2 font-bold text-center text-sm uppercase tracking-wider mt-2">Karakterini Seç</p>
+                <div class="emoji-slider-wrapper">
+                    <div id="char-slider" class="emoji-slider"></div>
+                </div>
+            </div>
+
+            <div class="w-full mb-6 px-4">
+                <input id="p-name" type="text" placeholder="Adın ne?" class="w-full text-center text-2xl p-4 rounded-xl border-4 border-blue-200 outline-none text-gray-700 bg-white focus:border-blue-400 transition-colors" autocomplete="off">
+            </div>
+
+            <div class="w-full px-4">
+                <button id="btn-start" onclick="startGame()" class="w-full py-4 text-2xl font-bold rounded-2xl bg-green-500 text-white shadow-[0_4px_0_#15803d] active:shadow-none active:translate-y-[4px] transition-all">
+                    BAŞLA!
+                </button>
+            </div>
             
-            <button onclick="addNumber(7)" class="numpad-btn">7</button>
-            <button onclick="addNumber(8)" class="numpad-btn">8</button>
-            <button onclick="addNumber(9)" class="numpad-btn">9</button>
-            
-            <button onclick="deleteNumber()" id="btn-del" class="numpad-btn btn-red">SİL</button>
-            <button onclick="addNumber(0)" class="numpad-btn">0</button>
-            <button onclick="checkAnswer()" class="numpad-btn btn-green">OK</button>
+            <div class="mt-8 flex gap-4 justify-center opacity-70">
+                <button onclick="setLang('tr')" class="text-4xl hover:scale-110 transition-transform">🇹🇷</button>
+                <button onclick="setLang('en')" class="text-4xl hover:scale-110 transition-transform">🇬🇧</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const translations = {
+        const DB = {
             tr: {
-                titleMain: "Çarpım<br>Canavarı",
-                placeholderName: "Adın ne?",
-                labelChar: "Karakterini Seç:",
-                btnStart: "BAŞLA!",
-                labelScore: "Yıldız:",
-                labelStreak: "Seri:",
-                labelAnswer: "Cevap:",
-                btnDel: "SİL",
-                warningName: "Lütfen bir isim yaz!",
-                praises: ["Harika", "Süper", "Doğru", "Aferin", "Müthişsin", "Efsanesin", "Deha", "Şimşek", "Durmak Yok", "İnanılmaz"],
-                tryAgain: "Tekrar dene"
+                t: "Çarpım<br>Canavarı", p: "Adın ne?", c: "KARAKTERİNİ SEÇ", b: "BAŞLA!",
+                ls: "YILDIZ", lstr: "SERİ", la: "Cevap:", bd: "SİL",
+                w: "Lütfen bir isim yaz!", try: "Tekrar dene",
+                pr: ["Harika", "Süper", "Doğru", "Aferin", "Müthiş", "Efsane", "Deha", "Şimşek", "Süpersin"]
             },
             en: {
-                titleMain: "Math<br>Monster",
-                placeholderName: "What's your name?",
-                labelChar: "Choose Character:",
-                btnStart: "START!",
-                labelScore: "Star:",
-                labelStreak: "Streak:",
-                labelAnswer: "Answer:",
-                btnDel: "DEL",
-                warningName: "Enter a name!",
-                praises: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legendary", "Genius", "Fast", "Unstoppable", "Incredible"],
-                tryAgain: "Try again"
+                t: "Math<br>Monster", p: "Your Name?", c: "CHOOSE CHARACTER", b: "START!",
+                ls: "STAR", lstr: "STREAK", la: "Answer:", bd: "DEL",
+                w: "Enter a name!", try: "Try again",
+                pr: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legend", "Genius", "Fast", "Perfect"]
             }
         };
 
-        let currentLang = 'tr';
-        let playerName = "";
-        let playerEmoji = "🦁"; 
-        const emojisToSelect = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱"];
+        let lang='tr', pName='', pChar='🦁', n1=1, n2=1, inp='', sc=0, str=0, weights={};
+        const emojis = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱", "🐶", "🐸"];
 
-        function initEmojiGrid() {
-            const grid = document.getElementById('emoji-grid');
-            grid.innerHTML = "";
-            emojisToSelect.forEach(emoji => {
-                const btn = document.createElement('div');
-                btn.innerText = emoji;
-                btn.className = `emoji-option ${emoji === playerEmoji ? 'selected' : ''}`;
-                btn.onclick = () => selectEmoji(emoji, btn);
-                grid.appendChild(btn);
+        function init() {
+            const slider = document.getElementById('char-slider');
+            
+            // Mouse Drag Mantığı
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            let isDragging = false; 
+
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                isDragging = false;
+                slider.classList.add('active');
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('active'); });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('active'); });
+
+            slider.addEventListener('mousemove', (e) => {
+                if(!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 2; 
+                if(Math.abs(walk) > 5) {
+                    isDragging = true;
+                    slider.scrollLeft = scrollLeft - walk;
+                }
+            });
+
+            emojis.forEach(e => {
+                const d = document.createElement('div');
+                d.className = `char-item ${e===pChar?'selected':''}`;
+                d.innerText = e;
+                
+                d.onclick = (event) => {
+                    if(isDragging) return;
+                    pChar = e;
+                    document.querySelectorAll('.char-item').forEach(x => x.classList.remove('selected'));
+                    d.classList.add('selected');
+                    centerEmoji(d);
+                };
+                slider.appendChild(d);
+            });
+            
+            // Başlangıçta ortala
+            setTimeout(() => {
+                const selected = slider.querySelector('.selected');
+                if(selected) centerEmoji(selected);
+            }, 100);
+
+            setLang('tr');
+        }
+
+        // --- YENİ ORTALAMA FONKSİYONU ---
+        function centerEmoji(el) {
+            const slider = document.getElementById('char-slider');
+            const sliderRect = slider.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            
+            // Elemanın merkezi ile Slider'ın merkezi arasındaki farkı bul
+            const offset = (elRect.left + elRect.width / 2) - (sliderRect.left + sliderRect.width / 2);
+            
+            // Mevcut scroll pozisyonuna bu farkı ekle
+            slider.scrollTo({
+                left: slider.scrollLeft + offset,
+                behavior: 'smooth'
             });
         }
 
-        function selectEmoji(emoji, btnElement) {
-            playerEmoji = emoji;
-            document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
-            btnElement.classList.add('selected');
-        }
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            const t = translations[lang];
-            document.getElementById('title-main').innerHTML = t.titleMain;
-            document.getElementById('player-name-input').placeholder = t.placeholderName;
-            document.getElementById('label-choose-char').innerText = t.labelChar;
-            document.getElementById('btn-start').innerText = t.btnStart;
-            document.getElementById('label-score').innerText = t.labelScore;
-            document.getElementById('label-streak').innerText = t.labelStreak;
-            document.getElementById('label-answer').innerText = t.labelAnswer;
-            document.getElementById('btn-del').innerText = t.btnDel;
-            document.getElementById('name-warning').innerText = t.warningName;
-            document.getElementById('btn-tr').classList.toggle('active', lang === 'tr');
-            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-        }
-
-        let currentFactor1 = 1, currentFactor2 = 1, currentInput = "", score = 0, streak = 0;
-        let questionWeights = {};
-        const MAX_WEIGHT = 20, MIN_WEIGHT = 1, WEIGHT_PENALTY = 5, WEIGHT_REWARD = 1;
-
-        function initWeights() {
-            for(let i=1; i<=9; i++) {
-                for(let j=1; j<=9; j++) {
-                    let weight = 1;
-                    if (i >= 5 || j >= 5) weight = 4;
-                    if (i >= 5 && j >= 5) weight = 10;
-                    if (i === 1 || j === 1) weight = 1;
-                    questionWeights[`${i}x${j}`] = weight;
-                }
-            }
+        function setLang(l) {
+            lang = l;
+            const d = DB[l];
+            document.getElementById('title').innerHTML = d.t;
+            document.getElementById('lbl-char').innerText = d.c;
+            document.getElementById('p-name').placeholder = d.p;
+            document.getElementById('btn-start').innerText = d.b;
+            
+            document.getElementById('lbl-score').innerText = d.ls;
+            document.getElementById('lbl-streak').innerText = d.lstr;
+            document.getElementById('lbl-ans').innerText = d.la;
+            document.getElementById('btn-del').innerText = d.bd;
+            
+            document.getElementById('btn-tr').classList.toggle('active', l==='tr');
+            document.getElementById('btn-en').classList.toggle('active', l==='en');
         }
 
         function startGame() {
-            const nameInput = document.getElementById('player-name-input');
-            const warning = document.getElementById('name-warning');
-            if(nameInput.value.trim() === "") {
-                warning.style.opacity = "1";
-                nameInput.classList.add('shake');
-                setTimeout(() => nameInput.classList.remove('shake'), 400);
+            const nm = document.getElementById('p-name');
+            if(!nm.value.trim()) {
+                nm.classList.add('shake'); setTimeout(()=>nm.classList.remove('shake'),400);
                 return;
             }
-            playerName = nameInput.value.trim();
-            initWeights();
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            generateQuestion();
-        }
-
-        function generateQuestion() {
-            let totalWeight = 0;
-            const keys = Object.keys(questionWeights);
-            keys.forEach(key => totalWeight += questionWeights[key]);
-            let randomNum = Math.random() * totalWeight;
-            let selectedKey = keys[keys.length - 1];
-            for (let key of keys) {
-                randomNum -= questionWeights[key];
-                if (randomNum <= 0) { selectedKey = key; break; }
-            }
-            const parts = selectedKey.split('x');
-            if(parts[0] == currentFactor1 && parts[1] == currentFactor2 && keys.length > 1) {
-                generateQuestion(); return;
-            }
-            currentFactor1 = parseInt(parts[0]);
-            currentFactor2 = parseInt(parts[1]);
+            pName = nm.value.trim();
             
-            if(Math.random() > 0.5) {
-                document.getElementById('factor1').innerText = currentFactor1;
-                document.getElementById('factor2').innerText = currentFactor2;
-            } else {
-                document.getElementById('factor1').innerText = currentFactor2;
-                document.getElementById('factor2').innerText = currentFactor1;
+            for(let i=1;i<=9;i++) for(let j=1;j<=9;j++) {
+                let w = 1;
+                if(i>=5 || j>=5) w=4;
+                if(i>=5 && j>=5) w=10;
+                weights[`${i}x${j}`] = w;
             }
-            currentInput = "";
-            updateInputDisplay();
-            const qBox = document.getElementById('question-box');
-            qBox.classList.remove('shake');
-            qBox.classList.remove('border-green-400');
-            qBox.style.borderColor = '#3b82f6';
-            document.getElementById('correct-answer-display').classList.add('translate-y-full');
+
+            document.getElementById('start-view').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
+            document.getElementById('game-view').classList.add('flex');
+            newQ();
         }
 
-        function addNumber(num) {
-            if (currentInput.length < 3) {
-                currentInput += num;
-                updateInputDisplay();
+        function newQ() {
+            let tot=0, keys=Object.keys(weights);
+            keys.forEach(k => tot+=weights[k]);
+            let r = Math.random()*tot;
+            let sel = keys[keys.length-1];
+            for(let k of keys) {
+                r -= weights[k];
+                if(r<=0) { sel=k; break; }
             }
-        }
-
-        function deleteNumber() {
-            currentInput = currentInput.slice(0, -1);
-            updateInputDisplay();
-        }
-
-        function updateInputDisplay() {
-            const display = document.getElementById('user-answer');
-            display.innerText = currentInput;
-            if(currentInput === "") {
-                display.classList.add('border-dashed');
-                display.classList.remove('bg-white');
-            } else {
-                display.classList.remove('border-dashed');
-                display.classList.add('bg-white');
-            }
-        }
-
-        function checkAnswer() {
-            if (currentInput === "") return;
-            const userAnswer = parseInt(currentInput);
-            const correctAnswer = currentFactor1 * currentFactor2;
-            const key = `${currentFactor1}x${currentFactor2}`;
-            const keyReverse = `${currentFactor2}x${currentFactor1}`;
-
-            if (userAnswer === correctAnswer) {
-                handleCorrect(key, keyReverse);
-            } else {
-                handleWrong(key, keyReverse, correctAnswer);
-            }
-        }
-
-        function handleCorrect(key, keyReverse) {
-            score += 10;
-            streak++;
-            questionWeights[key] = Math.max(MIN_WEIGHT, questionWeights[key] - WEIGHT_REWARD);
-            if(questionWeights[keyReverse]) questionWeights[keyReverse] = questionWeights[key];
-
-            document.getElementById('score').innerText = score;
-            document.getElementById('streak').innerText = streak;
+            let [a,b] = sel.split('x').map(Number);
+            if(a===n1 && b===n2 && keys.length>1) return newQ();
             
-            const qBox = document.getElementById('question-box');
-            qBox.classList.add('border-green-400');
-            qBox.style.borderColor = '#4ade80';
+            n1=a; n2=b;
+            document.getElementById('n1').innerText = n1;
+            document.getElementById('n2').innerText = n2;
             
-            const fb = document.getElementById('feedback-message');
-            fb.innerText = getRandomPraise() + " " + playerEmoji + " " + playerName + "!";
-            fb.style.opacity = '1';
-            fb.classList.add('text-green-500');
-            fireConfetti();
-            spawnEmojis('happy'); 
-            setTimeout(() => {
-                fb.style.opacity = '0';
-                fb.classList.remove('text-green-500');
-                generateQuestion();
-            }, 1200);
+            inp='';
+            updInp();
+            document.getElementById('q-card').style.borderColor = '#3b82f6';
+            document.getElementById('correct-toast').style.transform = 'translateY(100%)';
         }
 
-        function handleWrong(key, keyReverse, correctAnswer) {
-            streak = 0;
-            questionWeights[key] = Math.min(MAX_WEIGHT, questionWeights[key] + WEIGHT_PENALTY);
-            if(questionWeights[keyReverse]) questionWeights[keyReverse] = questionWeights[key];
-
-            document.getElementById('streak').innerText = streak;
-            const qBox = document.getElementById('question-box');
-            qBox.classList.add('shake');
-            const answerDisplay = document.getElementById('correct-answer-display');
-            document.getElementById('real-answer').innerText = correctAnswer;
-            answerDisplay.classList.remove('translate-y-full');
-            const fb = document.getElementById('feedback-message');
-            fb.innerText = translations[currentLang].tryAgain + "!";
-            fb.style.opacity = '1';
-            fb.classList.add('text-red-500');
-            spawnEmojis('sad');
-            setTimeout(() => {
-                qBox.classList.remove('shake');
-                answerDisplay.classList.add('translate-y-full');
-                fb.style.opacity = '0';
-                fb.classList.remove('text-red-500');
-                currentInput = "";
-                updateInputDisplay();
-                generateQuestion();
-            }, 2000);
+        function input(n) { if(inp.length<3) { inp+=n; updInp(); } }
+        function del() { inp=inp.slice(0,-1); updInp(); }
+        function updInp() {
+            const b = document.getElementById('ans-box');
+            b.innerText = inp;
+            b.style.borderStyle = inp ? 'solid' : 'dashed';
+            b.style.background = inp ? 'white' : '#f3f4f6';
         }
 
-        function getRandomPraise() {
-            const praises = translations[currentLang].praises;
-            return praises[Math.floor(Math.random() * praises.length)];
+        function check() {
+            if(!inp) return;
+            let ans = parseInt(inp);
+            let real = n1*n2;
+            let k = `${n1}x${n2}`, kr = `${n2}x${n1}`;
+
+            if(ans === real) {
+                sc+=10; str++;
+                weights[k] = Math.max(1, weights[k]-1);
+                if(weights[kr]) weights[kr] = weights[k];
+                showFeed(true);
+            } else {
+                str=0;
+                weights[k] = Math.min(20, weights[k]+5);
+                if(weights[kr]) weights[kr] = weights[k];
+                showFeed(false, real);
+            }
+            document.getElementById('score-val').innerText = sc;
+            document.getElementById('streak-val').innerText = str;
         }
 
-        const happyEmojis = ['🎉', '🌟', '👏', '🥳', '💯', '⭐']; 
-        const sadEmojis = ['😢', '😭', '🥺', '🤔', '❌', '⛔'];
-        function spawnEmojis(type) {
-            const count = 10; 
-            let currentList = type === 'happy' ? [...happyEmojis, playerEmoji] : sadEmojis;
-            for (let i = 0; i < count; i++) {
-                const emoji = document.createElement('span');
-                emoji.innerText = currentList[Math.floor(Math.random() * currentList.length)];
-                emoji.classList.add('emoji-animated');
-                emoji.style.left = (Math.random() * 80 + 10) + "%";
-                emoji.style.top = (Math.random() * 50 + 20) + "%";
-                document.body.appendChild(emoji);
-                setTimeout(() => { emoji.remove(); }, 1500);
+        function showFeed(isCorrect, real) {
+            const fb = document.getElementById('feedback');
+            const card = document.getElementById('q-card');
+            
+            if(isCorrect) {
+                fb.innerText = DB[lang].pr[Math.floor(Math.random()*DB[lang].pr.length)] + " " + pChar;
+                fb.style.color = '#22c55e';
+                card.style.borderColor = '#22c55e';
+                fb.style.opacity = 1;
+                confetti();
+                spawnEmoji(true);
+                setTimeout(() => {
+                    fb.style.opacity = 0;
+                    newQ();
+                }, 1000);
+            } else {
+                fb.innerText = DB[lang].try;
+                fb.style.color = '#ef4444';
+                card.classList.add('shake');
+                document.getElementById('real-ans').innerText = real;
+                document.getElementById('correct-toast').style.transform = 'translateY(0)';
+                fb.style.opacity = 1;
+                spawnEmoji(false);
+                setTimeout(() => {
+                    card.classList.remove('shake');
+                    fb.style.opacity = 0;
+                    newQ();
+                }, 2000);
             }
         }
 
-        const canvas = document.getElementById("confetti");
-        const ctx = canvas.getContext("2d");
-        let particles = [];
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        function fireConfetti() {
-            for (let i = 0; i < 40; i++) particles.push({ x: canvas.width/2, y: canvas.height/2, vx: (Math.random()-0.5)*20, vy: (Math.random()-1)*20, color: `hsl(${Math.random()*360},100%,50%)`, size: Math.random()*8+4, life: 1 });
-            if (particles.length <= 40) requestAnimationFrame(updateConfetti);
+        function spawnEmoji(happy) {
+            let list = happy ? ['🎉','⭐', pChar] : ['❌','🤔','💨'];
+            for(let i=0; i<8; i++) {
+                let el = document.createElement('div');
+                el.innerText = list[Math.floor(Math.random()*list.length)];
+                el.className = 'floating-emoji';
+                el.style.left = (20 + Math.random()*60) + '%';
+                el.style.top = (40 + Math.random()*20) + '%';
+                document.body.appendChild(el);
+                setTimeout(()=>el.remove(), 1500);
+            }
         }
-        function updateConfetti() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, index) => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.02; p.size *= 0.95;
-                ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-                if (p.life <= 0) particles.splice(index, 1);
-            });
-            if (particles.length > 0) requestAnimationFrame(updateConfetti);
+
+        const cvs=document.getElementById('confetti'), ctx=cvs.getContext('2d');
+        let parts=[];
+        function sz(){cvs.width=window.innerWidth;cvs.height=window.innerHeight}
+        window.onresize=sz; sz();
+        function confetti(){
+            for(let i=0;i<40;i++) parts.push({x:cvs.width/2,y:cvs.height/2,vx:(Math.random()-.5)*20,vy:(Math.random()-1)*20,c:`hsl(${Math.random()*360},100%,50%)`});
+            loop();
         }
-        setLanguage('tr');
-        initEmojiGrid();
+        function loop(){
+            ctx.clearRect(0,0,cvs.width,cvs.height);
+            parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.5;ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fill();if(p.y>cvs.height)parts.splice(i,1)});
+            if(parts.length)requestAnimationFrame(loop);
+        }
+
+        init();
     </script>
 </body>
 </html>
