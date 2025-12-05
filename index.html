@@ -2,142 +2,213 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <!-- viewport-fit=cover: Çentikli telefonlar için ekranı tam kapla komutu -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Multiplication Monster</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
         
+        :root {
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        * {
+            box-sizing: border-box;
+            /* Dokunmatik gecikmesini önler */
+            touch-action: manipulation; 
+        }
+
         body {
             font-family: 'Fredoka', sans-serif;
-            touch-action: manipulation;
             background-color: #f0f9ff;
             overflow: hidden;
             user-select: none;
-            /* iPhone Çentik Ayarı (Safe Area) */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
+            /* Dynamic Viewport Height: Adres çubuğu sorununu çözer */
+            height: 100dvh; 
+            width: 100vw;
+            margin: 0;
+            padding: 0;
         }
 
-        .game-container {
-            max-width: 500px;
+        /* Ana Taşıyıcı: Tüm ekranı kaplar ve esnek kutu modelini kullanır */
+        .app-layout {
+            height: 100%;
+            width: 100%;
+            max-width: 600px; /* Tabletlerde çok genişlememesi için */
             margin: 0 auto;
-            height: 100vh;
-            /* Yüksekliği safe-area düşülmüş ekran kadar yap */
-            height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 1rem;
+            /* Safe area boşlukları */
+            padding-top: calc(var(--safe-top) + 10px);
+            padding-bottom: calc(var(--safe-bottom) + 10px);
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* 1. ÜST KISIM (Skorlar) - Küçülmez */
+        .header-section {
+            flex-shrink: 0; 
+            margin-bottom: 0.5rem;
+            /* Dil butonu ile çakışmaması için sağa boşluk */
+            padding-right: 60px; 
+        }
+
+        /* 2. ORTA KISIM (Soru Kutusu) - Esner */
+        .question-section {
+            flex-grow: 1; /* Kalan tüm boşluğu bu doldurur */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 3px solid #3b82f6;
+            margin-bottom: 1rem;
             position: relative;
+            min-height: 180px; /* Çok küçülüp ezilmesini engeller */
+        }
+
+        /* 3. ALT KISIM (Tuşlar) - Küçülmez ama esnek */
+        .numpad-section {
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            /* Ekran yüksekliğine göre tuş yüksekliğini ayarla */
+            height: 40%; 
+            max-height: 350px;
+            min-height: 200px;
         }
 
         .numpad-btn {
             background-color: white;
-            border-bottom: 6px solid #e2e8f0;
-            border-radius: 1rem;
-            transition: all 0.1s;
+            border-bottom: 4px solid #e2e8f0;
+            border-radius: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4b5563;
+            transition: transform 0.1s;
+            cursor: pointer;
+            height: 100%; /* Grid hücresini doldur */
         }
 
         .numpad-btn:active {
-            transform: translateY(4px);
+            transform: translateY(2px);
             border-bottom: 2px solid #e2e8f0;
         }
 
-        .screen-area {
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border: 4px solid #3b82f6;
+        /* EKRAN KISAYSA (iPhone SE, Yatay mod vb) ÖZEL AYARLAR */
+        @media (max-height: 700px) {
+            .numpad-section {
+                height: 45%; /* Tuşlara biraz daha yer ver */
+                gap: 0.3rem;
+            }
+            .header-section {
+                margin-bottom: 0.2rem;
+            }
+            .question-section {
+                margin-bottom: 0.5rem;
+                min-height: 140px;
+            }
+            .numpad-btn {
+                font-size: 1.5rem;
+                border-bottom-width: 3px;
+                border-radius: 0.6rem;
+            }
+            /* Skor fontlarını küçült */
+            .score-text { font-size: 1rem !important; }
+            .score-val { font-size: 1.2rem !important; }
+            
+            /* Soru fontlarını küçült */
+            .q-text { font-size: 3.5rem !important; }
+            .ans-box { height: 3.5rem !important; min-width: 80px !important; font-size: 2.5rem !important; }
         }
 
-        /* Language Toggle Styles - Safe Area Compatible */
+        /* Dil Seçimi */
         .lang-container {
-            position: absolute;
-            top: 1rem; 
+            position: fixed;
+            top: calc(var(--safe-top) + 10px);
             right: 1rem;
             z-index: 50;
             display: flex;
             gap: 0.5rem;
         }
-        
         .lang-btn {
-            opacity: 0.5;
-            filter: grayscale(100%);
-            transition: all 0.2s;
-            font-size: 1.8rem;
-            cursor: pointer;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: none;
         }
         .lang-btn.active {
-            opacity: 1;
-            filter: grayscale(0%);
+            background: white;
             transform: scale(1.1);
+            opacity: 1;
+            filter: grayscale(0);
+        }
+        .lang-btn:not(.active) {
+            opacity: 0.6;
+            filter: grayscale(1);
         }
 
-        /* Emoji Selector Styles */
+        /* Emoji Seçici */
+        .emoji-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
         .emoji-option {
-            font-size: 2.5rem;
-            padding: 0.5rem;
-            border-radius: 1rem;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-            border: 4px solid transparent;
+            font-size: 2rem;
+            padding: 0.2rem;
+            border-radius: 0.5rem;
+            border: 2px solid transparent;
         }
         .emoji-option.selected {
             background-color: #dbeafe;
             border-color: #3b82f6;
-            transform: scale(1.1);
         }
 
+        /* Animasyonlar */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 1; }
+            100% { transform: translateY(-300px) scale(1.2); opacity: 0; }
+        }
+        .emoji-animated {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            font-size: 3rem;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+        }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
         }
 
-        .shake {
-            animation: shake 0.4s ease-in-out;
-            border-color: #ef4444 !important;
-            background-color: #fee2e2 !important;
-        }
-
-        /* EMOJI ANIMATIONS */
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-300px) scale(1.5) rotate(360deg); opacity: 0; }
-        }
-
-        @keyframes floatDown {
-            0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 1; }
-            25% { transform: translateX(-20px) translateY(30px) rotate(-20deg); }
-            50% { transform: translateX(20px) translateY(60px) rotate(20deg); }
-            100% { transform: translateY(150px) scale(0.5) rotate(0deg); opacity: 0; }
-        }
-
-        .emoji-animated {
-            position: fixed;
-            pointer-events: none;
-            z-index: 60;
-            font-size: 3rem;
-        }
-
-        .emoji-happy { animation: floatUp 1.2s ease-out forwards; }
-        .emoji-sad { animation: floatDown 1.5s ease-in forwards; }
-
-        #confetti {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 50;
-        }
-
         .hidden { display: none !important; }
+        #confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 
-        .btn-blue { background-color: #3b82f6; color: white; border-bottom-color: #1d4ed8; }
+        /* Renkler */
         .btn-red { background-color: #ef4444; color: white; border-bottom-color: #b91c1c; }
         .btn-green { background-color: #22c55e; color: white; border-bottom-color: #15803d; }
     </style>
@@ -146,94 +217,89 @@
 
     <canvas id="confetti"></canvas>
 
-    <!-- Language Selector -->
     <div class="lang-container">
         <button onclick="setLanguage('tr')" id="btn-tr" class="lang-btn active">🇹🇷</button>
         <button onclick="setLanguage('en')" id="btn-en" class="lang-btn">🇬🇧</button>
     </div>
 
     <!-- START SCREEN -->
-    <div id="start-screen" class="game-container justify-center items-center text-center overflow-y-auto">
-        <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-2 mt-8">Çarpım<br>Canavarı</h1>
-        
-        <!-- Emoji Selection Grid -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 mb-4 w-full">
-            <p id="label-choose-char" class="text-gray-500 mb-2 font-bold">Karakterini Seç:</p>
-            <div class="flex justify-center flex-wrap gap-2" id="emoji-grid">
-                <!-- Emojis injected via JS -->
+    <div id="start-screen" class="app-layout justify-center items-center text-center" style="display: flex; overflow-y: auto;">
+        <div class="w-full py-10">
+            <h1 id="title-main" class="text-5xl font-bold text-blue-500 mb-6">Çarpım<br>Canavarı</h1>
+            
+            <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 mb-6 w-full max-w-sm mx-auto">
+                <p id="label-choose-char" class="text-gray-500 mb-2 font-bold">Karakterini Seç:</p>
+                <div class="emoji-grid" id="emoji-grid"></div>
             </div>
-        </div>
-        
-        <!-- Name Input Section -->
-        <div class="w-full mb-6">
-            <input type="text" id="player-name-input" placeholder="Adın ne?" class="w-full text-center text-2xl p-4 rounded-xl border-4 border-blue-200 focus:border-blue-500 outline-none text-gray-700 placeholder-gray-300 transition-colors" autocomplete="off">
-            <p id="name-warning" class="text-red-500 text-sm mt-2 opacity-0 transition-opacity">Lütfen bir isim yaz!</p>
-        </div>
+            
+            <div class="w-full max-w-sm mx-auto mb-6">
+                <input type="text" id="player-name-input" placeholder="Adın ne?" class="w-full text-center text-2xl p-4 rounded-xl border-4 border-blue-200 focus:border-blue-500 outline-none text-gray-700 placeholder-gray-300">
+                <p id="name-warning" class="text-red-500 text-sm mt-2 opacity-0 transition-opacity">Lütfen bir isim yaz!</p>
+            </div>
 
-        <button id="btn-start" onclick="startGame()" class="w-full py-5 text-2xl font-bold rounded-2xl btn-green shadow-lg active:scale-95 transition-transform">
-            BAŞLA!
-        </button>
+            <button id="btn-start" onclick="startGame()" class="w-full max-w-sm py-4 text-2xl font-bold rounded-2xl btn-green shadow-lg active:scale-95 transition-transform text-white border-b-4 border-green-700">
+                BAŞLA!
+            </button>
+        </div>
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen" class="game-container hidden">
-        <!-- Top Bar: Score & Streak -->
-        <!-- Added pt-8 md:pt-4 to push content down below safe area/notches -->
-        <div class="flex justify-between items-center mb-4 mt-12 md:mt-4"> 
+    <div id="game-screen" class="app-layout hidden">
+        
+        <!-- HEADER (SKOR) -->
+        <div class="header-section flex justify-between items-center">
             <div class="bg-yellow-100 px-3 py-2 rounded-xl border-b-4 border-yellow-300 flex items-center gap-2">
-                <span id="label-score" class="text-yellow-700 font-bold text-sm md:text-base">Yıldız:</span>
-                <span id="score" class="text-xl md:text-2xl font-bold text-yellow-600">0</span>
+                <span id="label-score" class="score-text text-yellow-700 font-bold text-sm">Yıldız:</span>
+                <span id="score" class="score-val text-xl font-bold text-yellow-600">0</span>
             </div>
             <div class="bg-purple-100 px-3 py-2 rounded-xl border-b-4 border-purple-300 flex items-center gap-2">
-                <span id="label-streak" class="text-purple-700 font-bold text-sm md:text-base">Seri:</span>
-                <span id="streak" class="text-xl md:text-2xl font-bold text-purple-600">0</span>
+                <span id="label-streak" class="score-text text-purple-700 font-bold text-sm">Seri:</span>
+                <span id="streak" class="score-val text-xl font-bold text-purple-600">0</span>
             </div>
         </div>
 
-        <!-- Question Area -->
-        <div id="question-box" class="screen-area flex flex-col items-center justify-center flex-grow mb-4 relative overflow-hidden p-2">
-            <!-- Feedback moved slightly down to avoid overlap -->
-            <div id="feedback-message" class="absolute top-6 font-bold text-lg md:text-xl text-gray-400 opacity-0 transition-opacity text-center w-full px-2 z-10">Harika!</div>
+        <!-- SORU ALANI -->
+        <div id="question-box" class="question-section">
+            <div id="feedback-message" class="absolute top-4 font-bold text-lg text-gray-400 opacity-0 transition-opacity text-center w-full px-2">Harika!</div>
             
-            <div class="flex items-center justify-center text-7xl md:text-8xl font-bold text-gray-700 gap-3 mt-4">
-                <span id="factor1">?</span>
-                <span class="text-blue-400 text-5xl">x</span>
-                <span id="factor2">?</span>
+            <!-- Flex wrap yok, yan yana kalmaya zorluyoruz -->
+            <div class="flex items-center justify-center gap-2 mt-2">
+                <span id="factor1" class="q-text text-6xl md:text-7xl font-bold text-gray-700">?</span>
+                <span class="q-text text-4xl md:text-5xl text-blue-400 font-bold">x</span>
+                <span id="factor2" class="q-text text-6xl md:text-7xl font-bold text-gray-700">?</span>
             </div>
             
-            <div class="mt-6 flex items-center gap-2 mb-4">
-                <span class="text-5xl text-gray-300">=</span>
-                <div id="user-answer" class="h-20 min-w-[120px] px-4 bg-gray-100 rounded-xl flex items-center justify-center text-6xl font-bold text-blue-600 border-2 border-dashed border-gray-300"></div>
+            <div class="mt-4 flex items-center gap-2">
+                <span class="text-4xl text-gray-300">=</span>
+                <div id="user-answer" class="ans-box h-16 min-w-[100px] bg-gray-100 rounded-xl flex items-center justify-center text-5xl font-bold text-blue-600 border-2 border-dashed border-gray-300"></div>
             </div>
 
-            <!-- Hint Area -->
-            <div id="correct-answer-display" class="absolute bottom-0 w-full bg-red-100 text-red-500 py-3 text-center font-bold text-xl transform translate-y-full transition-transform z-20">
-                <span id="label-answer">Doğru Cevap:</span> <span id="real-answer" class="text-3xl">0</span>
+            <div id="correct-answer-display" class="absolute bottom-0 w-full bg-red-100 text-red-500 py-2 text-center font-bold transform translate-y-full transition-transform rounded-b-[1.3rem]">
+                <span id="label-answer">Cevap:</span> <span id="real-answer" class="text-2xl">0</span>
             </div>
         </div>
 
-        <!-- Numpad -->
-        <div class="grid grid-cols-3 gap-2 h-auto pb-safe">
-            <button onclick="addNumber(1)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">1</button>
-            <button onclick="addNumber(2)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">2</button>
-            <button onclick="addNumber(3)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">3</button>
+        <!-- NUMPAD -->
+        <div class="numpad-section">
+            <button onclick="addNumber(1)" class="numpad-btn">1</button>
+            <button onclick="addNumber(2)" class="numpad-btn">2</button>
+            <button onclick="addNumber(3)" class="numpad-btn">3</button>
             
-            <button onclick="addNumber(4)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">4</button>
-            <button onclick="addNumber(5)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">5</button>
-            <button onclick="addNumber(6)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">6</button>
+            <button onclick="addNumber(4)" class="numpad-btn">4</button>
+            <button onclick="addNumber(5)" class="numpad-btn">5</button>
+            <button onclick="addNumber(6)" class="numpad-btn">6</button>
             
-            <button onclick="addNumber(7)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">7</button>
-            <button onclick="addNumber(8)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">8</button>
-            <button onclick="addNumber(9)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">9</button>
+            <button onclick="addNumber(7)" class="numpad-btn">7</button>
+            <button onclick="addNumber(8)" class="numpad-btn">8</button>
+            <button onclick="addNumber(9)" class="numpad-btn">9</button>
             
-            <button onclick="deleteNumber()" id="btn-del" class="numpad-btn btn-red text-xl py-3 md:py-4 font-bold">SİL</button>
-            <button onclick="addNumber(0)" class="numpad-btn text-3xl py-3 md:py-4 font-bold text-gray-600">0</button>
-            <button onclick="checkAnswer()" class="numpad-btn btn-green text-xl py-3 md:py-4 font-bold">OK</button>
+            <button onclick="deleteNumber()" id="btn-del" class="numpad-btn btn-red">SİL</button>
+            <button onclick="addNumber(0)" class="numpad-btn">0</button>
+            <button onclick="checkAnswer()" class="numpad-btn btn-green">OK</button>
         </div>
     </div>
 
     <script>
-        // --- TRANSLATION DATA ---
         const translations = {
             tr: {
                 titleMain: "Çarpım<br>Canavarı",
@@ -242,15 +308,10 @@
                 btnStart: "BAŞLA!",
                 labelScore: "Yıldız:",
                 labelStreak: "Seri:",
-                labelAnswer: "Doğru Cevap:",
+                labelAnswer: "Cevap:",
                 btnDel: "SİL",
                 warningName: "Lütfen bir isim yaz!",
-                // DIVERSE PRAISES
-                praises: [
-                    "Harika", "Süper", "Doğru", "Aferin", "Böyle Devam", 
-                    "Müthişsin", "Efsanesin", "Matematik Dehası", 
-                    "Şimşek Gibisin", "Durmak Yok", "İnanılmaz", "Çok İyisin"
-                ],
+                praises: ["Harika", "Süper", "Doğru", "Aferin", "Müthişsin", "Efsanesin", "Deha", "Şimşek", "Durmak Yok", "İnanılmaz"],
                 tryAgain: "Tekrar dene"
             },
             en: {
@@ -262,22 +323,15 @@
                 labelStreak: "Streak:",
                 labelAnswer: "Answer:",
                 btnDel: "DEL",
-                warningName: "Please enter a name!",
-                // DIVERSE PRAISES
-                praises: [
-                    "Great", "Super", "Correct", "Awesome", "Keep it up", 
-                    "Amazing", "Legendary", "Math Genius", 
-                    "Lightning Fast", "Unstoppable", "Incredible", "Very Good"
-                ],
+                warningName: "Enter a name!",
+                praises: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legendary", "Genius", "Fast", "Unstoppable", "Incredible"],
                 tryAgain: "Try again"
             }
         };
 
         let currentLang = 'tr';
         let playerName = "";
-        let playerEmoji = "🦁"; // Default
-
-        // EMOJI LIST
+        let playerEmoji = "🦁"; 
         const emojisToSelect = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱"];
 
         function initEmojiGrid() {
@@ -294,7 +348,6 @@
 
         function selectEmoji(emoji, btnElement) {
             playerEmoji = emoji;
-            // Update UI
             document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
             btnElement.classList.add('selected');
         }
@@ -302,8 +355,6 @@
         function setLanguage(lang) {
             currentLang = lang;
             const t = translations[lang];
-
-            // Update UI Static Text
             document.getElementById('title-main').innerHTML = t.titleMain;
             document.getElementById('player-name-input').placeholder = t.placeholderName;
             document.getElementById('label-choose-char').innerText = t.labelChar;
@@ -313,24 +364,13 @@
             document.getElementById('label-answer').innerText = t.labelAnswer;
             document.getElementById('btn-del').innerText = t.btnDel;
             document.getElementById('name-warning').innerText = t.warningName;
-
-            // Toggle Flag Visuals
             document.getElementById('btn-tr').classList.toggle('active', lang === 'tr');
             document.getElementById('btn-en').classList.toggle('active', lang === 'en');
         }
 
-        // --- GAME STATE ---
-        let currentFactor1 = 1;
-        let currentFactor2 = 1;
-        let currentInput = "";
-        let score = 0;
-        let streak = 0;
-        
+        let currentFactor1 = 1, currentFactor2 = 1, currentInput = "", score = 0, streak = 0;
         let questionWeights = {};
-        const MAX_WEIGHT = 20; 
-        const MIN_WEIGHT = 1;
-        const WEIGHT_PENALTY = 5; 
-        const WEIGHT_REWARD = 1;
+        const MAX_WEIGHT = 20, MIN_WEIGHT = 1, WEIGHT_PENALTY = 5, WEIGHT_REWARD = 1;
 
         function initWeights() {
             for(let i=1; i<=9; i++) {
@@ -347,25 +387,16 @@
         function startGame() {
             const nameInput = document.getElementById('player-name-input');
             const warning = document.getElementById('name-warning');
-            
-            // Check name
             if(nameInput.value.trim() === "") {
                 warning.style.opacity = "1";
                 nameInput.classList.add('shake');
                 setTimeout(() => nameInput.classList.remove('shake'), 400);
                 return;
             }
-
             playerName = nameInput.value.trim();
             initWeights();
-            
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('game-screen').classList.add('flex');
-            
-            // Hide language button during game to prevent clicks, or keep it if desired
-            // Keeping it but it's safe now due to padding.
-            
             generateQuestion();
         }
 
@@ -373,27 +404,19 @@
             let totalWeight = 0;
             const keys = Object.keys(questionWeights);
             keys.forEach(key => totalWeight += questionWeights[key]);
-
             let randomNum = Math.random() * totalWeight;
             let selectedKey = keys[keys.length - 1];
-
             for (let key of keys) {
                 randomNum -= questionWeights[key];
-                if (randomNum <= 0) {
-                    selectedKey = key;
-                    break;
-                }
+                if (randomNum <= 0) { selectedKey = key; break; }
             }
-
             const parts = selectedKey.split('x');
             if(parts[0] == currentFactor1 && parts[1] == currentFactor2 && keys.length > 1) {
-                generateQuestion(); 
-                return;
+                generateQuestion(); return;
             }
-
             currentFactor1 = parseInt(parts[0]);
             currentFactor2 = parseInt(parts[1]);
-
+            
             if(Math.random() > 0.5) {
                 document.getElementById('factor1').innerText = currentFactor1;
                 document.getElementById('factor2').innerText = currentFactor2;
@@ -401,12 +424,12 @@
                 document.getElementById('factor1').innerText = currentFactor2;
                 document.getElementById('factor2').innerText = currentFactor1;
             }
-
             currentInput = "";
             updateInputDisplay();
-            
             const qBox = document.getElementById('question-box');
             qBox.classList.remove('shake');
+            qBox.classList.remove('border-green-400');
+            qBox.style.borderColor = '#3b82f6';
             document.getElementById('correct-answer-display').classList.add('translate-y-full');
         }
 
@@ -425,7 +448,6 @@
         function updateInputDisplay() {
             const display = document.getElementById('user-answer');
             display.innerText = currentInput;
-            
             if(currentInput === "") {
                 display.classList.add('border-dashed');
                 display.classList.remove('bg-white');
@@ -437,7 +459,6 @@
 
         function checkAnswer() {
             if (currentInput === "") return;
-
             const userAnswer = parseInt(currentInput);
             const correctAnswer = currentFactor1 * currentFactor2;
             const key = `${currentFactor1}x${currentFactor2}`;
@@ -453,7 +474,6 @@
         function handleCorrect(key, keyReverse) {
             score += 10;
             streak++;
-            
             questionWeights[key] = Math.max(MIN_WEIGHT, questionWeights[key] - WEIGHT_REWARD);
             if(questionWeights[keyReverse]) questionWeights[keyReverse] = questionWeights[key];
 
@@ -464,18 +484,13 @@
             qBox.classList.add('border-green-400');
             qBox.style.borderColor = '#4ade80';
             
-            // Kişiselleştirilmiş övgü + Emoji
             const fb = document.getElementById('feedback-message');
-            // Örnek: "Efsanesin 🦁 Ali!"
             fb.innerText = getRandomPraise() + " " + playerEmoji + " " + playerName + "!";
             fb.style.opacity = '1';
             fb.classList.add('text-green-500');
-
             fireConfetti();
             spawnEmojis('happy'); 
-
             setTimeout(() => {
-                qBox.style.borderColor = '#3b82f6';
                 fb.style.opacity = '0';
                 fb.classList.remove('text-green-500');
                 generateQuestion();
@@ -488,31 +503,25 @@
             if(questionWeights[keyReverse]) questionWeights[keyReverse] = questionWeights[key];
 
             document.getElementById('streak').innerText = streak;
-
             const qBox = document.getElementById('question-box');
             qBox.classList.add('shake');
-            
             const answerDisplay = document.getElementById('correct-answer-display');
             document.getElementById('real-answer').innerText = correctAnswer;
             answerDisplay.classList.remove('translate-y-full');
-
             const fb = document.getElementById('feedback-message');
             fb.innerText = translations[currentLang].tryAgain + "!";
             fb.style.opacity = '1';
             fb.classList.add('text-red-500');
-
             spawnEmojis('sad');
-
             setTimeout(() => {
                 qBox.classList.remove('shake');
                 answerDisplay.classList.add('translate-y-full');
                 fb.style.opacity = '0';
                 fb.classList.remove('text-red-500');
-                
                 currentInput = "";
                 updateInputDisplay();
                 generateQuestion();
-            }, 2500);
+            }, 2000);
         }
 
         function getRandomPraise() {
@@ -520,79 +529,41 @@
             return praises[Math.floor(Math.random() * praises.length)];
         }
 
-        // --- SPAWN EMOJIS ---
-        const happyEmojis = ['🎉', '🌟', '👏', '🥳', '💯', '⭐']; // User avatar is added dynamically
+        const happyEmojis = ['🎉', '🌟', '👏', '🥳', '💯', '⭐']; 
         const sadEmojis = ['😢', '😭', '🥺', '🤔', '❌', '⛔'];
-
         function spawnEmojis(type) {
-            const count = 12; 
-            // Eğer mutluysa, kullanıcının seçtiği karakteri de fırlatılanlara ekle
-            let currentList = type === 'happy' ? [...happyEmojis, playerEmoji, playerEmoji] : sadEmojis;
-            
-            const animClass = type === 'happy' ? 'emoji-happy' : 'emoji-sad';
-            
+            const count = 10; 
+            let currentList = type === 'happy' ? [...happyEmojis, playerEmoji] : sadEmojis;
             for (let i = 0; i < count; i++) {
                 const emoji = document.createElement('span');
                 emoji.innerText = currentList[Math.floor(Math.random() * currentList.length)];
-                emoji.classList.add('emoji-animated', animClass);
-                
-                const randomX = Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1;
-                const randomY = Math.random() * window.innerHeight * 0.5 + window.innerHeight * 0.2;
-                
-                emoji.style.left = `${randomX}px`;
-                emoji.style.top = `${randomY}px`;
-                emoji.style.animationDelay = `${Math.random() * 0.3}s`;
-
+                emoji.classList.add('emoji-animated');
+                emoji.style.left = (Math.random() * 80 + 10) + "%";
+                emoji.style.top = (Math.random() * 50 + 20) + "%";
                 document.body.appendChild(emoji);
                 setTimeout(() => { emoji.remove(); }, 1500);
             }
         }
 
-        // --- CONFETTI ---
         const canvas = document.getElementById("confetti");
         const ctx = canvas.getContext("2d");
         let particles = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
-
         function fireConfetti() {
-            for (let i = 0; i < 50; i++) {
-                particles.push({
-                    x: canvas.width / 2,
-                    y: canvas.height / 2,
-                    vx: (Math.random() - 0.5) * 20,
-                    vy: (Math.random() - 1) * 20,
-                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                    size: Math.random() * 8 + 4,
-                    life: 1
-                });
-            }
-            if (particles.length <= 50) requestAnimationFrame(updateConfetti);
+            for (let i = 0; i < 40; i++) particles.push({ x: canvas.width/2, y: canvas.height/2, vx: (Math.random()-0.5)*20, vy: (Math.random()-1)*20, color: `hsl(${Math.random()*360},100%,50%)`, size: Math.random()*8+4, life: 1 });
+            if (particles.length <= 40) requestAnimationFrame(updateConfetti);
         }
-
         function updateConfetti() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles.forEach((p, index) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.5;
-                p.life -= 0.02;
-                p.size *= 0.95;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.02; p.size *= 0.95;
+                ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
                 if (p.life <= 0) particles.splice(index, 1);
             });
             if (particles.length > 0) requestAnimationFrame(updateConfetti);
         }
-
-        // Init
         setLanguage('tr');
         initEmojiGrid();
     </script>
