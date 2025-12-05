@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-    <title>Multiplication Monster - 2 in 1</title>
+    <title>Multiplication Monster - Smart Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
@@ -291,6 +291,23 @@
         <div id="balloon-container"></div>
     </div>
 
+    <!-- MOLA MODALI -->
+    <div id="continue-modal" class="hidden absolute top-0 left-0 w-full h-full bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full border-4 border-blue-200">
+            <div class="text-6xl mb-4">☕</div>
+            <h2 id="modal-title" class="text-2xl font-bold text-gray-800 mb-6">20 Soru Tamam!</h2>
+            <p id="modal-desc" class="text-gray-500 mb-8">Harika gidiyorsun. Devam etmek ister misin?</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="resumeGame()" id="btn-continue" class="w-full py-3 bg-green-500 text-white rounded-xl font-bold shadow-[0_4px_0_#15803d] active:shadow-none active:translate-y-[4px] transition-all text-xl">
+                    Devam Et
+                </button>
+                <button onclick="endGame()" id="btn-end" class="w-full py-3 bg-gray-100 text-gray-500 rounded-xl font-bold shadow-[0_4px_0_#d1d5db] active:shadow-none active:translate-y-[4px] transition-all">
+                    Bitir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- ÇEVİRİ VE VERİTABANI ---
         const DB = {
@@ -303,7 +320,8 @@
                 ls: "PUAN", lstr: "SERİ",
                 pr: ["Harika", "Süper", "Doğru", "Aferin", "Müthiş", "Efsane", "Deha", "Şimşek", "Süpersin"],
                 sad: ["Üzülme!", "Tekrar Dene", "Pes Etme", "Seri Bozuldu :(", "Yapabilirsin!", "Az Kaldı!"],
-                milestone: ["Durdurulamazsın!", "Efsanevi Seri!", "Matematik Dehası!", "İnanılmaz!", "Ateş Ediyorsun! 🔥"]
+                milestone: ["Durdurulamazsın!", "Efsanevi Seri!", "Matematik Dehası!", "İnanılmaz!", "Ateş Ediyorsun! 🔥"],
+                mt: "20 Soru Bitti!", md: "Harika gidiyorsun! Devam mı?", by: "Devam Et", bn: "Bitir"
             },
             en: {
                 t: "Math<br>Monster", p: "Your Name?", c: "CHOOSE CHARACTER", btn: "NEXT",
@@ -314,7 +332,8 @@
                 ls: "SCORE", lstr: "STREAK",
                 pr: ["Great", "Super", "Correct", "Awesome", "Amazing", "Legend", "Genius", "Fast", "Perfect"],
                 sad: ["Don't be sad", "Try Again", "Don't Give Up", "Streak Lost :(", "You Can Do It", "So Close!"],
-                milestone: ["Unstoppable!", "Legendary Streak!", "Math Genius!", "Incredible!", "On Fire! 🔥"]
+                milestone: ["Unstoppable!", "Legendary Streak!", "Math Genius!", "Incredible!", "On Fire! 🔥"],
+                mt: "20 Questions Done!", md: "You are doing great! Continue?", by: "Continue", bn: "Finish"
             }
         };
 
@@ -322,9 +341,14 @@
         let pName = '', pChar = '🦁';
         let currentMode = null;
         let score = 0;
-        let streak = 0; // YENİ: Seri sayacı
+        let streak = 0; 
+        let questionCount = 0; // Toplam soru sayacı
+        let isPaused = false; // Oyun durduruldu mu?
         let qData = { n1: 1, n2: 1, ans: 1 };
         const emojis = ["🦁", "🐯", "🐼", "🐨", "🦄", "🚀", "🦖", "🤖", "⭐", "🐱", "🐶", "🐸"];
+        
+        // --- AKILLI TEKRAR SİSTEMİ (SMART REPETITION) ---
+        let mistakes = []; // Yanlış yapılan soruları tutan havuz
 
         // --- BAŞLANGIÇ & MENÜ ---
         function init() {
@@ -334,8 +358,6 @@
 
         function renderCharSlider() {
             const slider = document.getElementById('char-slider');
-            
-            // --- Drag Logic Start (Mouse + Touch) ---
             let isDown = false;
             let startX;
             let scrollLeft;
@@ -345,7 +367,7 @@
             slider.addEventListener('mousedown', (e) => {
                 isDown = true;
                 isDragging = false;
-                slider.style.scrollBehavior = 'auto'; // SMOOTH KAPAT
+                slider.style.scrollBehavior = 'auto'; 
                 slider.classList.add('active');
                 startX = e.pageX;
                 scrollLeft = slider.scrollLeft;
@@ -354,7 +376,7 @@
             const endDrag = () => {
                 isDown = false;
                 slider.classList.remove('active');
-                slider.style.scrollBehavior = 'smooth'; // SMOOTH AÇ
+                slider.style.scrollBehavior = 'smooth'; 
             };
             
             slider.addEventListener('mouseleave', endDrag);
@@ -369,38 +391,34 @@
                 slider.scrollLeft = scrollLeft + walk;
             });
 
-            // TOUCH EVENTS - Telefondaki çakışmayı önlemek için güncellendi
+            // TOUCH EVENTS
             slider.addEventListener('touchstart', (e) => {
                 isDown = true;
                 isDragging = false;
-                slider.style.scrollBehavior = 'auto'; // Sürüklerken animasyonu kapat
+                slider.style.scrollBehavior = 'auto'; 
                 startX = e.touches[0].pageX;
                 scrollLeft = slider.scrollLeft;
             }, {passive: false});
 
             slider.addEventListener('touchend', () => {
                 isDown = false;
-                slider.style.scrollBehavior = 'smooth'; // Bırakınca animasyonu aç
+                slider.style.scrollBehavior = 'smooth'; 
             });
 
             slider.addEventListener('touchmove', (e) => {
                 if(!isDown) return;
-                // e.preventDefault(); // Sayfa kaymasını engelle
                 const x = e.touches[0].pageX;
                 const walk = (startX - x) * 2; 
                 if(Math.abs(walk) > 5) isDragging = true;
                 slider.scrollLeft = scrollLeft + walk;
             }, {passive: false});
 
-            // --- Drag Logic End ---
-
             emojis.forEach(e => {
                 const d = document.createElement('div');
                 d.className = `char-item ${e===pChar?'selected':''}`;
                 d.innerText = e;
-                
                 d.onclick = (event) => {
-                    if(isDragging) return; // Sürüklerken seçme
+                    if(isDragging) return; 
                     pChar = e;
                     document.querySelectorAll('.char-item').forEach(x => x.classList.remove('selected'));
                     d.classList.add('selected');
@@ -409,7 +427,6 @@
                 slider.appendChild(d);
             });
 
-            // Başlangıçta ortala
             setTimeout(() => {
                 const sel = slider.querySelector('.selected');
                 if(sel) centerEmoji(sel);
@@ -442,6 +459,12 @@
             // Etiketleri güncelle
             document.querySelectorAll('.lbl-score').forEach(el => el.innerText = d.ls);
             document.querySelectorAll('.lbl-streak').forEach(el => el.innerText = d.lstr);
+
+            // Modal Textleri
+            document.getElementById('modal-title').innerText = d.mt;
+            document.getElementById('modal-desc').innerText = d.md;
+            document.getElementById('btn-continue').innerText = d.by;
+            document.getElementById('btn-end').innerText = d.bn;
         }
 
         function goToMenu() {
@@ -466,7 +489,10 @@
         function startGame(mode) {
             currentMode = mode;
             score = 0;
-            streak = 0; // Seriyi sıfırla
+            streak = 0; 
+            questionCount = 0; // Soru sayacını sıfırla
+            isPaused = false;
+            
             document.getElementById('menu-view').classList.add('hidden');
             document.getElementById('menu-view').classList.remove('flex');
 
@@ -476,6 +502,9 @@
 
         function endGame() {
             // Temizlik
+            isPaused = false;
+            document.getElementById('continue-modal').classList.add('hidden'); // Modalı kapat
+            
             if(balloonInterval) clearInterval(balloonInterval);
             document.getElementById('balloon-container').innerHTML = '';
 
@@ -488,26 +517,75 @@
             document.getElementById('menu-view').classList.add('flex');
         }
 
+        // --- MOLA SİSTEMİ ---
+        function checkContinue() {
+            questionCount++;
+            if(questionCount > 0 && questionCount % 20 === 0) {
+                isPaused = true; // Oyunu durdur
+                document.getElementById('continue-modal').classList.remove('hidden');
+                return true; // Durduruldu sinyali ver
+            }
+            return false;
+        }
+
+        function resumeGame() {
+            isPaused = false;
+            document.getElementById('continue-modal').classList.add('hidden');
+            
+            // Hangi moddaysak oradan devam et
+            if(currentMode === 'classic') {
+                newClassicQ();
+            } else if(currentMode === 'balloon') {
+                newBalloonLevel();
+                // Balon animasyonları loop içinde isPaused kontrolü ile otomatik devam eder
+            }
+        }
+
         // --- ORTAK MATEMATİK FONKSİYONLARI ---
+        
+        // Hata Yönetimi Fonksiyonları
+        function addMistake(n1, n2) {
+            // Hata listesine ekle (Çift yönlü kontrol: 7x8 ile 8x7 aynı zorluktur)
+            const exists = mistakes.some(m => (m.n1 === n1 && m.n2 === n2) || (m.n1 === n2 && m.n2 === n1));
+            if(!exists) {
+                mistakes.push({n1, n2});
+            }
+        }
+
+        function removeMistake(n1, n2) {
+            // Doğru bilinirse listeden çıkar
+            mistakes = mistakes.filter(m => !((m.n1 === n1 && m.n2 === n2) || (m.n1 === n2 && m.n2 === n1)));
+        }
+
         function generateQ() {
-            // Basit ağırlıklı seçim simülasyonu
+            // 1. Akıllı Tekrar: Hata havuzunda soru varsa %60 ihtimalle oradan sor
+            if(mistakes.length > 0 && Math.random() < 0.6) {
+                const m = mistakes[Math.floor(Math.random() * mistakes.length)];
+                qData = { n1: m.n1, n2: m.n2, ans: m.n1 * m.n2 };
+                return qData;
+            }
+
+            // 2. Zorluk Ağırlığı: Büyük sayıları daha sık sor
             let a = Math.floor(Math.random() * 9) + 1;
             let b = Math.floor(Math.random() * 9) + 1;
-            // 1x1 gibi çok basitleri daha az sor, 6x8 gibileri daha çok (basit mantık)
-            if(Math.random() > 0.7) { a = Math.floor(Math.random()*5)+5; b = Math.floor(Math.random()*5)+5; }
+            
+            // 6,7,8,9 sayılarını daha sık sormak için
+            if(Math.random() > 0.3) { 
+                 a = Math.floor(Math.random() * 5) + 5; // 5,6,7,8,9
+                 b = Math.floor(Math.random() * 9) + 1; // 1-9
+                 if(Math.random() > 0.5) b = Math.floor(Math.random() * 5) + 5;
+            }
             
             qData = { n1: a, n2: b, ans: a*b };
             return qData;
         }
 
         function showConfetti() {
-            // Basit confetti tetikleyicisi
             for(let i=0;i<30;i++) parts.push({x:window.innerWidth/2,y:window.innerHeight/2,vx:(Math.random()-.5)*20,vy:(Math.random()-1)*20,c:`hsl(${Math.random()*360},100%,50%)`});
             if(!animating) { animating=true; loopConfetti(); }
         }
 
         function getPraise() {
-            // 10'lu seri kontrolü
             if (streak > 0 && streak % 10 === 0) {
                 const milestones = DB[lang].milestone;
                 return milestones[Math.floor(Math.random() * milestones.length)] + " " + streak + "!";
@@ -529,10 +607,10 @@
             
             if(type === 'sad') {
                 el.innerText = getSadMessage();
-                el.style.color = '#ef4444'; // Kırmızı
+                el.style.color = '#ef4444'; 
             } else {
                 el.innerText = getPraise();
-                el.style.color = (streak > 0 && streak % 10 === 0) ? '#a855f7' : '#22c55e'; // Mor (10'lu) veya Yeşil
+                el.style.color = (streak > 0 && streak % 10 === 0) ? '#a855f7' : '#22c55e'; 
             }
 
             el.style.opacity = 1;
@@ -542,30 +620,25 @@
             setTimeout(() => {
                 el.style.transform = "scale(1)";
                 el.style.opacity = 0;
-            }, 1500); // Biraz daha uzun kalsın
+            }, 1500); 
         }
 
         function spawnEmoji(isHappy) {
             let list = isHappy ? ['🎉','⭐', '✨', '🎈', pChar] : ['💩','🥀','🌧️','❌','🤔'];
-            // Eğer 10'lu seriyse daha coşkulu
             if(isHappy && streak % 10 === 0) list = ['🏆', '🚀', '👑', '🔥', '💯'];
 
-            // 5-8 arası emoji fırlat
             const count = 5 + Math.floor(Math.random() * 4);
-            
             for(let i=0; i<count; i++) {
                 let el = document.createElement('div');
                 el.innerText = list[Math.floor(Math.random()*list.length)];
                 el.className = 'floating-emoji';
                 el.style.left = (10 + Math.random()*80) + '%';
                 el.style.top = (40 + Math.random()*30) + '%';
-                // Rastgele gecikme
                 el.style.animationDelay = (Math.random() * 0.5) + 's';
                 document.body.appendChild(el);
                 setTimeout(()=>el.remove(), 2000);
             }
         }
-
 
         function updateStreakUI() {
             document.getElementById('c-streak').innerText = streak;
@@ -605,24 +678,32 @@
             if(!cInp) return;
             const val = parseInt(cInp);
             const card = document.getElementById('c-card');
+            
             if(val === qData.ans) {
                 score += 10;
-                streak++; // Seri arttır
+                streak++; 
                 document.getElementById('c-score').innerText = score;
                 updateStreakUI();
+                
+                removeMistake(qData.n1, qData.n2); // Hata listesinden çıkar
 
                 card.style.borderColor = '#22c55e'; // Green
-                
-                showFeedback('c-feedback', 'praise'); // Mesajı göster
-                spawnEmoji(true); // Emojileri uçur
+                showFeedback('c-feedback', 'praise'); 
+                spawnEmoji(true); 
                 showConfetti();
                 
+                // Mola kontrolü (Eğer mola verildiyse sonraki soruya geçme)
+                if(checkContinue()) return;
+
                 setTimeout(newClassicQ, 800);
             } else {
-                streak = 0; // Seri sıfırla
+                streak = 0; 
                 updateStreakUI();
-                showFeedback('c-feedback', 'sad'); // Üzgün mesaj
-                spawnEmoji(false); // Üzgün emojiler
+                
+                addMistake(qData.n1, qData.n2); // Hata listesine ekle
+
+                showFeedback('c-feedback', 'sad'); 
+                spawnEmoji(false); 
                 
                 card.classList.add('shake');
                 card.style.borderColor = '#ef4444'; // Red
@@ -650,10 +731,8 @@
             document.getElementById('b-n1').innerText = qData.n1;
             document.getElementById('b-n2').innerText = qData.n2;
             
-            // Mevcut balonları temizle
             document.getElementById('balloon-container').innerHTML = '';
             
-            // Balonları oluştur (1 Doğru, 3 Yanlış)
             let answers = [qData.ans];
             while(answers.length < 4) {
                 let r = qData.ans + Math.floor(Math.random()*10) - 5;
@@ -661,16 +740,11 @@
             }
             answers.sort(() => Math.random() - 0.5);
 
-            // --- YENİ KISIM: Şerit Sistemi ---
-            // Ekranı %10, %32, %54, %76 gibi 4 şeride bölüyoruz (+rastgelelik)
             let lanes = [10, 32, 54, 76];
-            // Her şeride ufak bir kayma payı ekle (daha doğal dursun)
             lanes = lanes.map(l => l + (Math.random() * 5 - 2.5));
-            // Şeritleri karıştır ki cevap hep aynı yerde çıkmasın
             lanes.sort(() => Math.random() - 0.5);
 
             answers.forEach((ans, i) => {
-                // Her balona bir şerit ata
                 createBalloon(ans, i * 200, lanes[i]); 
             });
         }
@@ -680,14 +754,11 @@
             const b = document.createElement('div');
             b.className = 'balloon';
             
-            // Eğer özel bir pozisyon (şerit) verildiyse onu kullan, yoksa rastgele
             let finalLeft = (leftPos !== undefined) ? leftPos : (10 + Math.random() * 60);
             b.style.left = finalLeft + '%';
-            
             b.style.top = '-100px';
             b.dataset.val = val;
             
-            // Renkler
             const colors = ['#fca5a5', '#86efac', '#93c5fd', '#fcd34d', '#d8b4fe'];
             const color = colors[Math.floor(Math.random()*colors.length)];
 
@@ -699,7 +770,6 @@
             b.onclick = (e) => checkBalloon(b, val, e);
             
             setTimeout(() => {
-                // Parent kontrolü kaldırıldı, oyun hala açıksa ekle
                 if(!document.getElementById('game-balloon').classList.contains('hidden')) {
                     cont.appendChild(b);
                     animateBalloon(b);
@@ -709,10 +779,15 @@
 
         function animateBalloon(el) {
             let pos = -100;
-            const speed = 1.5 + Math.random(); // Her balonun hızı biraz farklı
+            const speed = 1.5 + Math.random(); 
             
             function frame() {
-                // ParentNode kontrolü yerine oyunun açık olup olmadığına bakabiliriz
+                // Eğer oyun duraklatıldıysa (Mola modu) döngü devam etsin ama hareket etmesin
+                if(isPaused) {
+                    requestAnimationFrame(frame);
+                    return;
+                }
+
                 if(!el.parentNode && !el.classList.contains('popped')) return; 
                 if(el.classList.contains('popped')) return;
 
@@ -720,20 +795,16 @@
                 el.style.top = pos + 'px';
                 
                 if(pos > window.innerHeight) {
-                    // Balon ekran dışına çıktı, şeridini kaybetmeden yenisini oluştur
                     let currentLane = parseFloat(el.style.left); 
                     el.remove();
                     
-                    // Eğer oyun kapalıysa yeni balon üretme
                     if(document.getElementById('game-balloon').classList.contains('hidden')) return;
 
-                    // Eğer doğru cevap kaçtıysa yenisini üret
                     if(parseInt(el.dataset.val) === qData.ans) {
-                        createBalloon(qData.ans, 0, currentLane); // Aynı şeritten tekrar at
+                        createBalloon(qData.ans, 0, currentLane); 
                     } else {
-                        // Yanlış cevap düştüyse yerine başka rastgele yanlış at
                         let wrong = qData.ans + Math.floor(Math.random()*10)+1;
-                        createBalloon(wrong, 0, currentLane); // Aynı şeritten tekrar at
+                        createBalloon(wrong, 0, currentLane); 
                     }
                 } else {
                     requestAnimationFrame(frame);
@@ -743,14 +814,17 @@
         }
 
         function checkBalloon(el, val, e) {
+            if(isPaused) return; // Mola anında tıklamayı engelle
+
             if(val === qData.ans) {
                 score += 10;
-                streak++; // Seri arttır
+                streak++; 
                 document.getElementById('b-score').innerText = score;
                 updateStreakUI();
                 el.classList.add('popped');
                 
-                // Puan efekti
+                removeMistake(qData.n1, qData.n2); // Hata listesinden çıkar
+
                 const floatScore = document.createElement('div');
                 floatScore.className = 'floating-score';
                 floatScore.innerText = '+10';
@@ -759,19 +833,23 @@
                 document.body.appendChild(floatScore);
                 setTimeout(()=>floatScore.remove(), 1000);
 
-                showFeedback('b-feedback', 'praise'); // Balon modunda mesajı göster
-                spawnEmoji(true); // Emojileri uçur
+                showFeedback('b-feedback', 'praise');
+                spawnEmoji(true); 
                 showConfetti();
                 
-                // Diğer balonları patlat ve yeni soruya geç
+                // Mola Kontrolü
+                if(checkContinue()) return;
+
                 setTimeout(newBalloonLevel, 500);
             } else {
-                streak = 0; // Seri sıfırla
+                streak = 0; 
                 updateStreakUI();
+                
+                addMistake(qData.n1, qData.n2); // Hata listesine ekle
+
                 showFeedback('b-feedback', 'sad');
                 spawnEmoji(false);
                 
-                // Yanlış cevap
                 el.classList.add('shake');
                 setTimeout(()=>el.classList.remove('shake'), 400);
                 score = Math.max(0, score - 5);
@@ -780,7 +858,7 @@
         }
 
         function startGameLoop_Balloon() {
-            // Ana döngüye gerek kalmadı, her balon kendi animasyonuna sahip
+            // Animasyonlar kendi içinde dönüyor
         }
 
         // --- EFEKT (CONFETTI) ---
